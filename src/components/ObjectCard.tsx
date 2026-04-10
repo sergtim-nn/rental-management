@@ -120,12 +120,11 @@ export default function ObjectCard({
 
   return (
     <div
-      className={`bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow cursor-pointer ${obj.isArchived ? 'opacity-70' : ''}`}
+      className={`bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow ${obj.isArchived ? 'opacity-70' : ''}`}
     >
       {/* Card Header */}
       <div
         className={`bg-gradient-to-br ${colors.header} p-4 relative`}
-        onClick={onClick}
       >
         <div className="flex items-start justify-between">
           <div>
@@ -152,7 +151,7 @@ export default function ObjectCard({
       </div>
 
       {/* Card Body */}
-      <div className="p-4 flex-1 space-y-3" onClick={onClick}>
+      <div className="p-4 flex-1 space-y-3">
         {/* Tenant */}
         <div className="flex items-center gap-2">
           <User size={14} className="text-slate-400 flex-shrink-0" />
@@ -160,13 +159,31 @@ export default function ObjectCard({
         </div>
 
         {obj.tenantPhone && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Phone size={13} className="text-slate-400 flex-shrink-0" />
-            <span className="text-xs text-slate-600">{obj.tenantPhone}</span>
+            <a
+              href={`tel:${obj.tenantPhone}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs text-slate-600 hover:text-blue-600 hover:underline transition-colors"
+            >
+              {obj.tenantPhone}
+            </a>
             {obj.tenantTelegram && (
               <>
                 <Send size={12} className="text-blue-400 ml-1 flex-shrink-0" />
-                <span className="text-xs text-blue-600">{obj.tenantTelegram}</span>
+                <a
+                  href={
+                    obj.tenantTelegram.startsWith('+')
+                      ? `https://t.me/${obj.tenantTelegram}`
+                      : `https://t.me/${obj.tenantTelegram.replace(/^@/, '')}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-xs text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                >
+                  {obj.tenantTelegram}
+                </a>
               </>
             )}
           </div>

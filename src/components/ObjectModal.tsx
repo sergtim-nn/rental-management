@@ -7,8 +7,6 @@ import {
   Save,
   MapPin,
   User,
-  Phone,
-  Send,
   Calendar,
   DollarSign,
   FileText,
@@ -119,8 +117,22 @@ export default function ObjectModal({
   const [street, setStreet] = useState(obj?.street ?? '');
   const [building, setBuilding] = useState(obj?.building ?? '');
   const [tenantName, setTenantName] = useState(obj?.tenantName ?? '');
-  const [tenantPhone, setTenantPhone] = useState(obj?.tenantPhone ?? '');
-  const [tenantTelegram, setTenantTelegram] = useState(obj?.tenantTelegram ?? '');
+  const [tenantPhoneDigits, setTenantPhoneDigits] = useState(() => {
+    const p = obj?.tenantPhone ?? '';
+    const digits = p.replace(/\D/g, '');
+    if ((digits.startsWith('7') || digits.startsWith('8')) && digits.length === 11) return digits.slice(1);
+    return digits.slice(0, 10);
+  });
+  const [telegramMode, setTelegramMode] = useState<'phone' | 'login'>(() => {
+    const t = obj?.tenantTelegram ?? '';
+    return t.startsWith('+') ? 'phone' : 'login';
+  });
+  const [telegramValue, setTelegramValue] = useState(() => {
+    const t = obj?.tenantTelegram ?? '';
+    if (t.startsWith('+7')) return t.slice(2).replace(/\D/g, '').slice(0, 10);
+    if (t.startsWith('@')) return t.slice(1);
+    return t;
+  });
   const [contractDate, setContractDate] = useState(obj?.contractDate ?? '');
   const [plannedRent, setPlannedRent] = useState(obj?.plannedRent ?? 0);
   const [plannedUtilities, setPlannedUtilities] = useState(obj?.plannedUtilities ?? 0);
@@ -157,8 +169,10 @@ export default function ObjectModal({
       street,
       building,
       tenantName,
-      tenantPhone,
-      tenantTelegram,
+      tenantPhone: tenantPhoneDigits ? `+7${tenantPhoneDigits}` : '',
+      tenantTelegram: telegramMode === 'phone'
+        ? (telegramValue ? `+7${telegramValue}` : '')
+        : (telegramValue ? `@${telegramValue}` : ''),
       contractDate,
       plannedRent,
       plannedUtilities,
@@ -295,15 +309,43 @@ export default function ObjectModal({
                 </Field>
               </div>
               <Field label="Телефон">
-                <div className="relative">
-                  <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input className={`${inputCls} pl-8`} value={tenantPhone} onChange={(e) => setTenantPhone(e.target.value)} placeholder="+7 999 000 00 00" />
+                <div className="flex items-center border border-slate-200 rounded-xl bg-white focus-within:ring-2 focus-within:ring-blue-400 focus-within:border-transparent transition-all overflow-hidden">
+                  <span className="px-3 py-2.5 text-sm font-medium text-slate-500 bg-slate-50 border-r border-slate-200 select-none whitespace-nowrap">+7</span>
+                  <input
+                    className="flex-1 px-3 py-2.5 text-sm text-slate-800 focus:outline-none bg-white min-w-0"
+                    value={tenantPhoneDigits}
+                    onChange={(e) => setTenantPhoneDigits(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="999 000 00 00"
+                    inputMode="numeric"
+                    maxLength={10}
+                  />
                 </div>
               </Field>
               <Field label="Telegram">
-                <div className="relative">
-                  <Send size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input className={`${inputCls} pl-8`} value={tenantTelegram} onChange={(e) => setTenantTelegram(e.target.value)} placeholder="@username" />
+                <div className="flex items-center border border-slate-200 rounded-xl bg-white focus-within:ring-2 focus-within:ring-blue-400 focus-within:border-transparent transition-all overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => { setTelegramMode(telegramMode === 'phone' ? 'login' : 'phone'); setTelegramValue(''); }}
+                    title="Переключить тип"
+                    className="flex items-center gap-1 px-3 py-2.5 text-sm font-medium text-blue-600 bg-slate-50 border-r border-slate-200 hover:bg-blue-50 transition-colors whitespace-nowrap select-none"
+                  >
+                    {telegramMode === 'phone' ? '+7' : '@'}
+                    <ChevronDown size={11} className="text-slate-400" />
+                  </button>
+                  <input
+                    className="flex-1 px-3 py-2.5 text-sm text-slate-800 focus:outline-none bg-white min-w-0"
+                    value={telegramValue}
+                    onChange={(e) => {
+                      if (telegramMode === 'phone') {
+                        setTelegramValue(e.target.value.replace(/\D/g, '').slice(0, 10));
+                      } else {
+                        setTelegramValue(e.target.value.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 32));
+                      }
+                    }}
+                    placeholder={telegramMode === 'phone' ? '999 000 00 00' : 'username'}
+                    inputMode={telegramMode === 'phone' ? 'numeric' : 'text'}
+                    maxLength={telegramMode === 'phone' ? 10 : 32}
+                  />
                 </div>
               </Field>
             </div>
