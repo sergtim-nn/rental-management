@@ -133,6 +133,7 @@ export default function ObjectModal({
     if (t.startsWith('@')) return t.slice(1);
     return t;
   });
+  const isParking = categoryId === 'parking';
   const [contractDate, setContractDate] = useState(obj?.contractDate ?? '');
   const [plannedRent, setPlannedRent] = useState(obj?.plannedRent ?? 0);
   const [plannedUtilities, setPlannedUtilities] = useState(obj?.plannedUtilities ?? 0);
@@ -232,8 +233,8 @@ export default function ObjectModal({
     a.click();
   };
 
-  const totalPlanned = plannedRent + plannedUtilities;
-  const totalActual = actualRent + actualUtilities;
+  const totalPlanned = isParking ? plannedRent : plannedRent + plannedUtilities;
+  const totalActual = isParking ? actualRent : actualRent + actualUtilities;
   const diff = totalActual - totalPlanned;
 
   const years = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
@@ -359,16 +360,18 @@ export default function ObjectModal({
             onToggle={() => setShowContract(!showContract)}
           />
           {showContract && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 pb-3">
+            <div className={`grid grid-cols-1 gap-3 pt-2 pb-3 ${isParking ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
               <Field label="Дата заключения договора">
                 <input type="date" className={inputCls} value={contractDate} onChange={(e) => setContractDate(e.target.value)} />
               </Field>
               <Field label="Плановая аренда (₽)">
                 <input type="number" className={inputCls} value={plannedRent || ''} onChange={(e) => setPlannedRent(Number(e.target.value))} placeholder="0" />
               </Field>
-              <Field label="Плановые коммунальные (₽)">
-                <input type="number" className={inputCls} value={plannedUtilities || ''} onChange={(e) => setPlannedUtilities(Number(e.target.value))} placeholder="0" />
-              </Field>
+              {!isParking && (
+                <Field label="Плановые коммунальные (₽)">
+                  <input type="number" className={inputCls} value={plannedUtilities || ''} onChange={(e) => setPlannedUtilities(Number(e.target.value))} placeholder="0" />
+                </Field>
+              )}
             </div>
           )}
 
@@ -401,23 +404,25 @@ export default function ObjectModal({
               </div>
 
               {/* Utilities */}
-              <div className="bg-white rounded-xl p-4 border border-slate-200 space-y-3">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Коммунальные платежи</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Плановая сумма">
-                    <div className="px-3 py-2.5 bg-slate-50 rounded-xl text-sm font-semibold text-slate-700">{formatCurrency(plannedUtilities)}</div>
+              {!isParking && (
+                <div className="bg-white rounded-xl p-4 border border-slate-200 space-y-3">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Коммунальные платежи</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Плановая сумма">
+                      <div className="px-3 py-2.5 bg-slate-50 rounded-xl text-sm font-semibold text-slate-700">{formatCurrency(plannedUtilities)}</div>
+                    </Field>
+                    <Field label="Фактическая оплата (₽)">
+                      <input type="number" className={inputCls} value={actualUtilities || ''} onChange={(e) => setActualUtilities(Number(e.target.value))} placeholder="0" />
+                    </Field>
+                  </div>
+                  <Field label="Дата оплаты">
+                    <input type="date" className={inputCls} value={utilitiesPaymentDate} onChange={(e) => setUtilitiesPaymentDate(e.target.value)} />
                   </Field>
-                  <Field label="Фактическая оплата (₽)">
-                    <input type="number" className={inputCls} value={actualUtilities || ''} onChange={(e) => setActualUtilities(Number(e.target.value))} placeholder="0" />
+                  <Field label="Способ оплаты">
+                    <PaymentTypeToggle value={utilitiesPaymentType} onChange={setUtilitiesPaymentType} />
                   </Field>
                 </div>
-                <Field label="Дата оплаты">
-                  <input type="date" className={inputCls} value={utilitiesPaymentDate} onChange={(e) => setUtilitiesPaymentDate(e.target.value)} />
-                </Field>
-                <Field label="Способ оплаты">
-                  <PaymentTypeToggle value={utilitiesPaymentType} onChange={setUtilitiesPaymentType} />
-                </Field>
-              </div>
+              )}
 
               {/* Totals */}
               <div className="bg-slate-800 rounded-xl p-4 text-white">

@@ -111,9 +111,12 @@ export default function ObjectCard({
   onDelete,
 }: ObjectCardProps) {
   const colors = CATEGORY_COLORS[category?.color ?? 'blue'] ?? CATEGORY_COLORS.blue;
+  const isParking = category?.id === 'parking';
 
-  const totalPlanned = obj.plannedRent + obj.plannedUtilities;
-  const totalActual = obj.currentPayment.actualRent + obj.currentPayment.actualUtilities;
+  const totalPlanned = isParking ? obj.plannedRent : obj.plannedRent + obj.plannedUtilities;
+  const totalActual = isParking
+    ? obj.currentPayment.actualRent
+    : obj.currentPayment.actualRent + obj.currentPayment.actualUtilities;
 
   const rentStatus = getPaymentStatus(obj.plannedRent, obj.currentPayment.actualRent);
   const utilStatus = getPaymentStatus(obj.plannedUtilities, obj.currentPayment.actualUtilities);
@@ -206,16 +209,18 @@ export default function ObjectCard({
               </span>
             </div>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500">Коммунальные</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-700">{formatCurrency(obj.currentPayment.actualUtilities)} / {formatCurrency(obj.plannedUtilities)}</span>
-              <span className={`inline-flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded-full ${utilStatus.color}`}>
-                {utilStatus.icon}
-                {utilStatus.label}
-              </span>
+          {!isParking && (
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500">Коммунальные</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-700">{formatCurrency(obj.currentPayment.actualUtilities)} / {formatCurrency(obj.plannedUtilities)}</span>
+                <span className={`inline-flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded-full ${utilStatus.color}`}>
+                  {utilStatus.icon}
+                  {utilStatus.label}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
           <div className="border-t border-slate-200 pt-2 flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600">Итого</span>
             <span className="text-sm font-bold text-slate-800">{formatCurrency(totalActual)} / {formatCurrency(totalPlanned)}</span>
