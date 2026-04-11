@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useAppState } from './hooks/useAppState';
 import { RealEstateObject } from './types';
 import { getCurrentPeriod } from './store/storage';
@@ -116,6 +116,49 @@ export default function App() {
     }
   }, [activeView, activeCategory]);
 
+  // ─── History / back-button navigation ────────────────────────────────────
+  // Ref для актуального обработчика popstate (всегда свежие значения состояния)
+  const _popHandler = useRef<((e: PopStateEvent) => void) | null>(null);
+  // Флаг: модалка была закрыта программно → следующий popstate игнорируем
+  const closingModalRef = useRef(false);
+
+  // Регистрируем listener один раз при монтировании
+  useEffect(() => {
+    history.replaceState({ view: activeView }, '');
+    const handler = (e: PopStateEvent) => _popHandler.current?.(e);
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Когда открывается модалка — пушим запись в history
+  useEffect(() => {
+    if (isModalNew || modalObjectId !== null) {
+      history.pushState({ view: activeView, modal: true }, '');
+    }
+  }, [isModalNew, modalObjectId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Обновляем обработчик при каждом рендере (свежие значения состояния)
+  _popHandler.current = (e: PopStateEvent) => {
+    // Модалка закрыта нами → подавляем навигацию
+    if (closingModalRef.current) {
+      closingModalRef.current = false;
+      return;
+    }
+    // Кнопка «Назад» при открытой модалке → закрываем модалку
+    if (modalObjectId !== null || isModalNew) {
+      setModalObjectId(null);
+      setIsModalNew(false);
+      return;
+    }
+    const s = e.state as { view?: string; categoryId?: string } | null;
+    if (!s?.view) return;
+    if (s.view === 'category' && s.categoryId) {
+      setActiveCategoryId(s.categoryId);
+    }
+    setActiveView(s.view as ActiveView);
+    setSearchQuery('');
+  };
+
   // ─── Auth (после всех хуков) ──────────────────────────────────────────────
   if (!isAuthenticated) {
     return <LoginScreen onLogin={login} />;
@@ -134,21 +177,25 @@ export default function App() {
     setActiveCategoryId(id);
     setActiveView('category');
     setSearchQuery('');
+    history.pushState({ view: 'category', categoryId: id }, '');
   };
 
   const handleSelectView = (view: string) => {
     setActiveView(view as ActiveView);
     setSearchQuery('');
+    history.pushState({ view }, '');
   };
 
   const handleOpenObject = (id: string) => {
     setModalObjectId(id);
     setIsModalNew(false);
+    // history push для модалки — в useEffect выше
   };
 
   const handleNewObject = () => {
     setModalObjectId(null);
     setIsModalNew(true);
+    // history push для модалки — в useEffect выше
   };
 
   const handleModalSave = (data: Partial<RealEstateObject>) => {
@@ -157,13 +204,17 @@ export default function App() {
     } else if (modalObjectId) {
       updateObject(modalObjectId, data);
     }
+    closingModalRef.current = true;
     setModalObjectId(null);
     setIsModalNew(false);
+    history.back();
   };
 
   const handleModalClose = () => {
+    closingModalRef.current = true;
     setModalObjectId(null);
     setIsModalNew(false);
+    history.back();
   };
 
   const handleAddDocument = (file: File) => {
@@ -226,7 +277,7 @@ export default function App() {
               {/* Mobile back button in category view */}
               {activeView === 'category' && (
                 <button
-                  onClick={() => { setActiveView('categories'); setSearchQuery(''); }}
+                  onClick={() => { setActiveView('categories'); setSearchQuery(''); history.pushState({ view: 'categories' }, ''); }}
                   className="lg:hidden p-1.5 -ml-1 rounded-xl hover:bg-[#f0ebf8] text-[#967BB6] flex-shrink-0 transition-colors"
                 >
                   <ChevronLeft size={22} />
@@ -507,7 +558,7 @@ export default function App() {
               return (
                 <button
                   key={id}
-                  onClick={() => { setActiveView(id); setSearchQuery(''); }}
+                  onClick={() => { setActiveView(id); setSearchQuery(''); history.pushState({ view: id }, ''); }}
                   className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 px-1 transition-colors ${
                     isActive ? 'text-[#967BB6]' : 'text-slate-400 hover:text-slate-600'
                   }`}
