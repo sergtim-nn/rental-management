@@ -152,24 +152,49 @@ export default function ObjectCard({
         <div className="border-t border-[#ede9f4]" />
 
         {/* Financials */}
-        <div className="flex items-center justify-between gap-1">
-          <div>
-            <p className="text-[10px] text-slate-400 leading-none mb-0.5">
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-slate-400 leading-none">
               {formatSelectionLabel(periodSelection)}
             </p>
-            <p className="text-sm font-bold text-slate-800 leading-tight">
-              {formatCurrency(totalActual)}
-            </p>
-            {totalPlanned > 0 && totalActual !== totalPlanned && (
-              <p className="text-[10px] text-slate-400 leading-none">
-                план {formatCurrency(totalPlanned)}
-              </p>
+            {obj.contractDate && (
+              <p className="text-[10px] text-slate-400">{formatDate(obj.contractDate)}</p>
             )}
           </div>
-          <div className="text-right">
-            <p className="text-[10px] text-slate-400 leading-none mb-0.5">Договор</p>
-            <p className="text-[10px] text-slate-500">{formatDate(obj.contractDate)}</p>
+          {/* Rent row */}
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[10px] text-slate-500 shrink-0">Аренда</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-xs font-bold text-slate-800">{formatCurrency(payment.actualRent)}</span>
+              {payment.plannedRent > 0 && (
+                <span className="text-[10px] text-slate-400">/ {formatCurrency(payment.plannedRent)}</span>
+              )}
+            </div>
           </div>
+          {/* Utilities row — only if present */}
+          {!isParking && (payment.plannedUtilities > 0 || payment.actualUtilities > 0) && (
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[10px] text-slate-500 shrink-0">Коммун.</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-xs font-bold text-slate-800">{formatCurrency(payment.actualUtilities)}</span>
+                {payment.plannedUtilities > 0 && (
+                  <span className="text-[10px] text-slate-400">/ {formatCurrency(payment.plannedUtilities)}</span>
+                )}
+              </div>
+            </div>
+          )}
+          {/* Total row when there are two payment types */}
+          {!isParking && (payment.plannedUtilities > 0 || payment.actualUtilities > 0) && (
+            <div className="flex items-center justify-between gap-1 border-t border-[#ede9f4] pt-1">
+              <span className="text-[10px] text-slate-400 shrink-0">Итого</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-xs font-bold text-slate-800">{formatCurrency(totalActual)}</span>
+                {totalPlanned > 0 && (
+                  <span className="text-[10px] text-slate-400">/ {formatCurrency(totalPlanned)}</span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

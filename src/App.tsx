@@ -379,7 +379,7 @@ export default function App() {
                   }
                 />
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {categoryObjects.map((obj) => (
                     <ObjectCard
                       key={obj.id}
@@ -415,7 +415,7 @@ export default function App() {
                   subtitle="Заархивированные объекты будут отображаться здесь"
                 />
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {archivedObjects.map((obj) => (
                     <ObjectCard
                       key={obj.id}

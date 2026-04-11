@@ -59,11 +59,11 @@ function SectionHeader({ title, icon, expanded, onToggle }: {
     <button
       type="button"
       onClick={onToggle}
-      className="w-full flex items-center gap-2 py-3 border-b border-slate-100 text-left"
+      className="w-full flex items-center gap-2 py-3 border-b border-[#ede9f4] text-left"
     >
-      <span className="text-slate-500">{icon}</span>
+      <span className="text-[#967BB6]">{icon}</span>
       <span className="font-semibold text-slate-700 flex-1">{title}</span>
-      {expanded ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+      {expanded ? <ChevronUp size={16} className="text-[#967BB6]" /> : <ChevronDown size={16} className="text-slate-400" />}
     </button>
   );
 }
@@ -77,7 +77,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const inputCls = "w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all bg-white";
+const inputCls = "w-full border border-[#ede9f4] rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#967BB6] focus:border-transparent transition-all bg-white";
 
 function PaymentTypeToggle({
   value,
@@ -267,9 +267,9 @@ export default function ObjectModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
-      <div className="bg-slate-50 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[96vh] flex flex-col">
+      <div className="bg-[#faf9f6] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[96vh] flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 py-4 bg-white rounded-t-2xl border-b border-slate-100">
+        <div className="flex items-center justify-between px-5 py-4 bg-white rounded-t-2xl border-b border-[#ede9f4]">
           <div>
             <h2 className="font-bold text-slate-800 text-lg">
               {isNew ? 'Новый объект' : `${obj?.street}, ${obj?.building}`}
@@ -280,7 +280,7 @@ export default function ObjectModal({
               </p>
             )}
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl text-slate-500">
+          <button onClick={onClose} className="p-2 hover:bg-[#f0ebf8] rounded-xl text-slate-400 hover:text-[#967BB6] transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -336,8 +336,8 @@ export default function ObjectModal({
                 </Field>
               </div>
               <Field label="Телефон">
-                <div className="flex items-center border border-slate-200 rounded-xl bg-white focus-within:ring-2 focus-within:ring-blue-400 focus-within:border-transparent transition-all overflow-hidden">
-                  <span className="px-3 py-2.5 text-sm font-medium text-slate-500 bg-slate-50 border-r border-slate-200 select-none whitespace-nowrap">+7</span>
+                <div className="flex items-center border border-[#ede9f4] rounded-xl bg-white focus-within:ring-2 focus-within:ring-[#967BB6] focus-within:border-transparent transition-all overflow-hidden">
+                  <span className="px-3 py-2.5 text-sm font-medium text-slate-500 bg-[#faf9f6] border-r border-[#ede9f4] select-none whitespace-nowrap">+7</span>
                   <input
                     className="flex-1 px-3 py-2.5 text-sm text-slate-800 focus:outline-none bg-white min-w-0"
                     value={tenantPhoneDigits}
@@ -349,12 +349,12 @@ export default function ObjectModal({
                 </div>
               </Field>
               <Field label="Telegram">
-                <div className="flex items-center border border-slate-200 rounded-xl bg-white focus-within:ring-2 focus-within:ring-blue-400 focus-within:border-transparent transition-all overflow-hidden">
+                <div className="flex items-center border border-[#ede9f4] rounded-xl bg-white focus-within:ring-2 focus-within:ring-[#967BB6] focus-within:border-transparent transition-all overflow-hidden">
                   <button
                     type="button"
                     onClick={() => { setTelegramMode(telegramMode === 'phone' ? 'login' : 'phone'); setTelegramValue(''); }}
                     title="Переключить тип"
-                    className="flex items-center gap-1 px-3 py-2.5 text-sm font-medium text-blue-600 bg-slate-50 border-r border-slate-200 hover:bg-blue-50 transition-colors whitespace-nowrap select-none"
+                    className="flex items-center gap-1 px-3 py-2.5 text-sm font-medium text-[#967BB6] bg-[#faf9f6] border-r border-[#ede9f4] hover:bg-[#f0ebf8] transition-colors whitespace-nowrap select-none"
                   >
                     {telegramMode === 'phone' ? '+7' : '@'}
                     <ChevronDown size={11} className="text-slate-400" />
@@ -411,11 +411,11 @@ export default function ObjectModal({
           {showPayment && (
             <div className="pt-2 pb-3 space-y-4">
               {/* Rent */}
-              <div className="bg-white rounded-xl p-4 border border-slate-200 space-y-3">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Аренда</p>
+              <div className="bg-white rounded-xl p-4 border border-[#ede9f4] space-y-3">
+                <p className="text-xs font-semibold text-[#967BB6] uppercase tracking-wider">Аренда</p>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Плановая сумма">
-                    <div className="px-3 py-2.5 bg-slate-50 rounded-xl text-sm font-semibold text-slate-700">{formatCurrency(plannedRent)}</div>
+                    <div className="px-3 py-2.5 bg-[#faf9f6] border border-[#ede9f4] rounded-xl text-sm font-semibold text-slate-700">{formatCurrency(plannedRent)}</div>
                   </Field>
                   <Field label="Фактическая оплата (₽)">
                     <input type="number" className={inputCls} value={actualRent || ''} onChange={(e) => setActualRent(Number(e.target.value))} placeholder="0" />
@@ -428,7 +428,7 @@ export default function ObjectModal({
                   <PaymentTypeToggle value={rentPaymentType} onChange={setRentPaymentType} />
                 </Field>
                 {!isNew && (
-                  <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3">
+                  <div className="rounded-xl border border-[#d8d0e8] bg-[#f0ebf8] p-3">
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
                       <Field label="Месяц">
                         <select
@@ -454,7 +454,7 @@ export default function ObjectModal({
                         type="button"
                         onClick={() => handleSavePaymentToHistory('rent')}
                         disabled={!canSaveRentPayment}
-                        className="rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        className="rounded-xl bg-[#967BB6] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#6d548c] disabled:cursor-not-allowed disabled:bg-[#c9bedd]"
                       >
                         Сохранить аренду
                       </button>
@@ -465,11 +465,11 @@ export default function ObjectModal({
 
               {/* Utilities */}
               {!isParking && (
-                <div className="bg-white rounded-xl p-4 border border-slate-200 space-y-3">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Коммунальные платежи</p>
+                <div className="bg-white rounded-xl p-4 border border-[#ede9f4] space-y-3">
+                  <p className="text-xs font-semibold text-[#967BB6] uppercase tracking-wider">Коммунальные платежи</p>
                   <div className="grid grid-cols-2 gap-3">
                     <Field label="Плановая сумма">
-                      <div className="px-3 py-2.5 bg-slate-50 rounded-xl text-sm font-semibold text-slate-700">{formatCurrency(plannedUtilities)}</div>
+                      <div className="px-3 py-2.5 bg-[#faf9f6] border border-[#ede9f4] rounded-xl text-sm font-semibold text-slate-700">{formatCurrency(plannedUtilities)}</div>
                     </Field>
                     <Field label="Фактическая оплата (₽)">
                       <input type="number" className={inputCls} value={actualUtilities || ''} onChange={(e) => setActualUtilities(Number(e.target.value))} placeholder="0" />
@@ -482,7 +482,7 @@ export default function ObjectModal({
                     <PaymentTypeToggle value={utilitiesPaymentType} onChange={setUtilitiesPaymentType} />
                   </Field>
                   {!isNew && (
-                    <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3">
+                    <div className="rounded-xl border border-[#d8d0e8] bg-[#f0ebf8] p-3">
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
                         <Field label="Месяц">
                           <select
@@ -508,7 +508,7 @@ export default function ObjectModal({
                           type="button"
                           onClick={() => handleSavePaymentToHistory('utilities')}
                           disabled={!canSaveUtilitiesPayment}
-                          className="rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                          className="rounded-xl bg-[#967BB6] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#6d548c] disabled:cursor-not-allowed disabled:bg-[#c9bedd]"
                         >
                           Сохранить коммунальные
                         </button>
@@ -519,19 +519,19 @@ export default function ObjectModal({
               )}
 
               {/* Totals */}
-              <div className="bg-slate-800 rounded-xl p-4 text-white">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Итог текущего периода</p>
+              <div className="bg-[#2d2040] rounded-xl p-4 text-white">
+                <p className="text-xs font-semibold text-[#c9bedd] uppercase tracking-wider mb-3">Итог текущего периода</p>
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">Плановый</p>
+                    <p className="text-xs text-[#c9bedd] mb-1">Плановый</p>
                     <p className="text-lg font-bold">{formatCurrency(totalPlanned)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">Фактический</p>
+                    <p className="text-xs text-[#c9bedd] mb-1">Фактический</p>
                     <p className="text-lg font-bold">{formatCurrency(totalActual)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">Разница</p>
+                    <p className="text-xs text-[#c9bedd] mb-1">Разница</p>
                     <p className={`text-lg font-bold ${diff >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                       {diff >= 0 ? '+' : ''}{formatCurrency(diff)}
                     </p>
@@ -615,7 +615,7 @@ export default function ObjectModal({
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-slate-300 rounded-xl text-sm text-slate-500 hover:bg-slate-100 hover:border-slate-400 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-[#d8d0e8] rounded-xl text-sm text-[#967BB6] hover:bg-[#f0ebf8] hover:border-[#967BB6] transition-colors"
                   >
                     <Upload size={16} />
                     Прикрепить документы
@@ -642,18 +642,18 @@ export default function ObjectModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-5 py-4 bg-white rounded-b-2xl border-t border-slate-100 flex items-center justify-end gap-3">
+        <div className="px-5 py-4 bg-white rounded-b-2xl border-t border-[#ede9f4] flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+            className="px-5 py-2.5 rounded-xl border border-[#ede9f4] text-sm font-medium text-slate-600 hover:bg-[#f0ebf8] transition-colors"
           >
             Отмена
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-slate-800 text-white text-sm font-semibold hover:bg-slate-700 transition-colors"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#967BB6] text-white text-sm font-semibold hover:bg-[#6d548c] transition-colors shadow-sm shadow-[#967BB6]/30"
           >
             <Save size={16} />
             {isNew ? 'Создать объект' : 'Сохранить'}
