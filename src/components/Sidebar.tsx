@@ -201,32 +201,13 @@ export default function Sidebar({
   };
 
   const getCategoryBgColor = (color: string, active: boolean) => {
-    const map: Record<string, string> = {
-      blue: active ? 'bg-blue-600' : 'bg-blue-50 hover:bg-blue-100',
-      green: active ? 'bg-green-600' : 'bg-green-50 hover:bg-green-100',
-      purple: active ? 'bg-purple-600' : 'bg-purple-50 hover:bg-purple-100',
-      orange: active ? 'bg-orange-500' : 'bg-orange-50 hover:bg-orange-100',
-      red: active ? 'bg-red-600' : 'bg-red-50 hover:bg-red-100',
-      yellow: active ? 'bg-yellow-500' : 'bg-yellow-50 hover:bg-yellow-100',
-      pink: active ? 'bg-pink-600' : 'bg-pink-50 hover:bg-pink-100',
-      teal: active ? 'bg-teal-600' : 'bg-teal-50 hover:bg-teal-100',
-    };
-    return map[color] ?? (active ? 'bg-slate-600' : 'bg-slate-50 hover:bg-slate-100');
+    if (active) return 'bg-[#f0ebf8]';
+    return 'hover:bg-[#f8f5fd]';
   };
 
   const getCategoryTextColor = (color: string, active: boolean) => {
-    if (active) return 'text-white';
-    const map: Record<string, string> = {
-      blue: 'text-blue-800',
-      green: 'text-green-800',
-      purple: 'text-purple-800',
-      orange: 'text-orange-800',
-      red: 'text-red-800',
-      yellow: 'text-yellow-800',
-      pink: 'text-pink-800',
-      teal: 'text-teal-800',
-    };
-    return map[color] ?? 'text-slate-800';
+    if (active) return 'text-[#6d548c] font-semibold';
+    return 'text-slate-500';
   };
 
   const navItems = [
@@ -283,36 +264,42 @@ export default function Sidebar({
 
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 bg-white border-r border-slate-200 z-30
-          flex flex-col shadow-xl transition-transform duration-300
+          fixed top-0 left-0 h-full w-64 z-30
+          flex flex-col transition-transform duration-300
+          bg-white border-r border-[#ede9f4] shadow-xl
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0 lg:static lg:shadow-none
         `}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <div>
-            <h1 className="text-lg font-bold text-slate-800">РентаМенеджер</h1>
-            <p className="text-xs text-slate-400">Управление арендой</p>
+        <div className="flex items-center justify-between px-5 py-5 border-b border-[#ede9f4]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[#967BB6] flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-sm font-bold">R</span>
+            </div>
+            <div>
+              <h1 className="text-sm font-bold text-slate-800 leading-tight">RentaManager</h1>
+              <p className="text-[10px] text-slate-400 leading-tight">Управление арендой</p>
+            </div>
           </div>
           <button
             onClick={onCloseMobile}
-            className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 text-slate-500"
+            className="lg:hidden p-1.5 rounded-lg hover:bg-[#f0ebf8] text-slate-500"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Navigation */}
-        <div className="px-3 pt-3 pb-2 space-y-1">
+        <div className="px-3 pt-4 pb-2 space-y-1">
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => { onSelectView(item.id); onCloseMobile(); }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-medium transition-all ${
                 activeView === item.id
-                  ? 'bg-slate-800 text-white'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  ? 'bg-[#967BB6] text-white shadow-sm shadow-[#967BB6]/30'
+                  : 'text-slate-500 hover:bg-[#f0ebf8] hover:text-[#6d548c]'
               }`}
             >
               {item.icon}
@@ -326,8 +313,8 @@ export default function Sidebar({
           ))}
         </div>
 
-        <div className="px-4 pt-3 pb-2">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+        <div className="px-4 pt-4 pb-2">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
             Категории
           </p>
         </div>
@@ -542,7 +529,7 @@ export default function Sidebar({
                 setShowAddForm(true);
                 setAddError('');
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors border-2 border-dashed border-slate-200 hover:border-slate-300 mt-2"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-2xl text-sm text-[#967BB6] hover:bg-[#f0ebf8] transition-colors border-2 border-dashed border-[#d8d0e8] hover:border-[#967BB6] mt-2 font-medium"
             >
               <Plus size={16} />
               <span>Добавить категорию</span>
@@ -607,8 +594,8 @@ export default function Sidebar({
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-3 border-t border-slate-100">
-          <p className="text-xs text-slate-400 text-center">
+        <div className="px-4 py-3 border-t border-[#ede9f4]">
+          <p className="text-[10px] text-slate-400 text-center">
             Данные хранятся на сервере
           </p>
         </div>
@@ -621,9 +608,9 @@ export function MobileMenuButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="lg:hidden fixed top-4 left-4 z-10 bg-white shadow-md rounded-xl p-2.5 border border-slate-200"
+      className="lg:hidden fixed top-4 left-4 z-10 bg-white shadow-sm rounded-2xl p-2.5 border border-[#ede9f4]"
     >
-      <Menu size={22} className="text-slate-700" />
+      <Menu size={22} className="text-[#967BB6]" />
     </button>
   );
 }

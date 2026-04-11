@@ -122,7 +122,7 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#faf9f6' }}>
         <div className="text-slate-400 text-sm">Загрузка данных...</div>
       </div>
     );
@@ -197,7 +197,7 @@ export default function App() {
   const normalizedPeriodSelection = normalizePeriodSelection(periodSelection);
 
   return (
-    <div className="min-h-screen bg-slate-100 flex">
+    <div className="min-h-screen flex" style={{ background: '#faf9f6' }}>
       {/* Sidebar */}
       <Sidebar
         categories={state.categories}
@@ -220,7 +220,7 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1 min-w-0 flex flex-col">
         {/* Top Bar */}
-        <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 sticky top-0 z-10">
+        <div className="bg-white/80 backdrop-blur-md border-b border-[#ede9f4] px-4 sm:px-6 py-3.5 sticky top-0 z-10">
           <div className="flex items-center gap-3 max-w-6xl mx-auto">
             {/* Title */}
             <div className="flex items-center gap-2 ml-12 lg:ml-0">
@@ -247,8 +247,8 @@ export default function App() {
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Поиск..."
-                  className="w-full pl-9 pr-8 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-slate-50"
+                  placeholder="Поиск объектов..."
+                  className="w-full pl-9 pr-8 py-2 rounded-2xl border border-[#ede9f4] text-sm focus:outline-none focus:ring-2 focus:ring-[#967BB6]/40 bg-[#faf9f6] placeholder-slate-400"
                 />
                 {searchQuery && (
                   <button
@@ -262,8 +262,8 @@ export default function App() {
             )}
 
             {showPeriodSelector && (
-              <div className={`${showSearchAndAdd ? '' : 'ml-auto'} flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2`}>
-                <span className="text-xs font-medium text-slate-500">Период</span>
+              <div className={`${showSearchAndAdd ? '' : 'ml-auto'} flex items-center gap-2 rounded-2xl border border-[#ede9f4] bg-white px-3 py-2`}>
+                <span className="text-xs font-medium text-slate-400">Период</span>
                 <select
                   value={periodSelection.mode}
                   onChange={(e) => {
@@ -332,7 +332,7 @@ export default function App() {
             {activeView === 'category' && (
               <button
                 onClick={handleNewObject}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white text-sm font-semibold rounded-xl hover:bg-slate-700 transition-colors flex-shrink-0"
+                className="flex items-center gap-2 px-4 py-2 bg-[#967BB6] text-white text-sm font-semibold rounded-full hover:bg-[#6d548c] transition-colors flex-shrink-0 shadow-sm shadow-[#967BB6]/30"
               >
                 <Plus size={16} />
                 <span className="hidden sm:inline">Добавить</span>
@@ -370,7 +370,7 @@ export default function App() {
                     !searchQuery ? (
                       <button
                         onClick={handleNewObject}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 text-white text-sm font-semibold rounded-xl hover:bg-slate-700 transition-colors"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-[#967BB6] text-white text-sm font-semibold rounded-full hover:bg-[#6d548c] transition-colors shadow-sm shadow-[#967BB6]/30"
                       >
                         <Plus size={16} />
                         Добавить объект
@@ -395,7 +395,7 @@ export default function App() {
                   {/* Add new card */}
                   <button
                     onClick={handleNewObject}
-                    className="border-2 border-dashed border-slate-300 rounded-2xl p-8 flex flex-col items-center justify-center gap-3 text-slate-400 hover:border-slate-400 hover:text-slate-600 hover:bg-white transition-all min-h-48"
+                    className="border-2 border-dashed border-[#d8d0e8] rounded-3xl p-8 flex flex-col items-center justify-center gap-3 text-[#967BB6] hover:border-[#967BB6] hover:bg-[#f0ebf8] transition-all min-h-48"
                   >
                     <Plus size={28} />
                     <span className="text-sm font-medium">Добавить объект</span>

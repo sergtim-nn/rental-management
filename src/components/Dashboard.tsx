@@ -60,34 +60,30 @@ export default function Dashboard({ objects, categories, periodSelection, onSele
     {
       label: 'Активных объектов',
       value: activeObjects.length,
-      icon: <Home size={22} />,
-      color: 'bg-blue-500',
-      textColor: 'text-blue-600',
-      bgLight: 'bg-blue-50',
+      icon: <Home size={20} />,
+      textColor: 'text-[#967BB6]',
+      bgLight: 'bg-[#f0ebf8]',
     },
     {
       label: 'Всего арендаторов',
       value: activeObjects.filter((o) => o.tenantName).length,
-      icon: <Users size={22} />,
-      color: 'bg-green-500',
-      textColor: 'text-green-600',
-      bgLight: 'bg-green-50',
+      icon: <Users size={20} />,
+      textColor: 'text-[#2ec4a9]',
+      bgLight: 'bg-[#e6f9f6]',
     },
     {
       label: 'Плановый доход',
       value: formatCurrency(totalPlanned),
-      icon: <DollarSign size={22} />,
-      color: 'bg-purple-500',
-      textColor: 'text-purple-600',
-      bgLight: 'bg-purple-50',
+      icon: <DollarSign size={20} />,
+      textColor: 'text-slate-500',
+      bgLight: 'bg-slate-100',
     },
     {
       label: 'Фактический доход',
       value: formatCurrency(totalActual),
-      icon: <TrendingUp size={22} />,
-      color: diff >= 0 ? 'bg-emerald-500' : 'bg-red-500',
-      textColor: diff >= 0 ? 'text-emerald-600' : 'text-red-600',
-      bgLight: diff >= 0 ? 'bg-emerald-50' : 'bg-red-50',
+      icon: <TrendingUp size={20} />,
+      textColor: diff >= 0 ? 'text-[#2ec4a9]' : 'text-[#f4724e]',
+      bgLight: diff >= 0 ? 'bg-[#e6f9f6]' : 'bg-[#fdf0ec]',
     },
   ];
 
@@ -96,68 +92,73 @@ export default function Dashboard({ objects, categories, periodSelection, onSele
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((card) => (
-          <div key={card.label} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-            <div className="flex items-center justify-between mb-3">
-              <div className={`w-10 h-10 rounded-xl ${card.bgLight} ${card.textColor} flex items-center justify-center`}>
-                {card.icon}
-              </div>
+          <div key={card.label} className="bg-white rounded-3xl p-5 shadow-sm border border-[#ede9f4]">
+            <div className={`w-10 h-10 rounded-2xl ${card.bgLight} ${card.textColor} flex items-center justify-center mb-4`}>
+              {card.icon}
             </div>
-            <p className="text-2xl font-bold text-slate-800">{card.value}</p>
-            <p className="text-xs text-slate-500 mt-0.5">{card.label}</p>
+            <p className="text-2xl font-bold text-slate-800 leading-tight">{card.value}</p>
+            <p className="text-xs text-slate-400 mt-1 font-medium">{card.label}</p>
           </div>
         ))}
       </div>
 
       {/* Payment Status */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-        <h3 className="font-semibold text-slate-700 mb-1">Статус оплат</h3>
-        <p className="text-sm text-slate-500 mb-4">Период: {formatSelectionLabel(periodSelection)}</p>
+      <div className="bg-white rounded-3xl p-6 shadow-sm border border-[#ede9f4]">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="font-bold text-slate-800">Статус платежей</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Период: {formatSelectionLabel(periodSelection)}</p>
+          </div>
+        </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-2">
-              <CheckCircle2 size={24} className="text-green-500" />
+          <div className="bg-[#e6f9f6] rounded-2xl p-4 text-center">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mx-auto mb-2 shadow-sm">
+              <CheckCircle2 size={20} className="text-[#2ec4a9]" />
             </div>
-            <p className="text-2xl font-bold text-green-600">{paid}</p>
-            <p className="text-xs text-slate-500">Оплачено</p>
+            <p className="text-2xl font-bold text-[#2ec4a9]">{paid}</p>
+            <p className="text-xs text-slate-500 mt-0.5">Оплачено</p>
           </div>
-          <div className="text-center">
-            <div className="w-12 h-12 bg-yellow-50 rounded-2xl flex items-center justify-center mx-auto mb-2">
-              <Clock size={24} className="text-yellow-500" />
+          <div className="bg-amber-50 rounded-2xl p-4 text-center">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mx-auto mb-2 shadow-sm">
+              <Clock size={20} className="text-amber-500" />
             </div>
-            <p className="text-2xl font-bold text-yellow-600">{partial}</p>
-            <p className="text-xs text-slate-500">Частично</p>
+            <p className="text-2xl font-bold text-amber-500">{partial}</p>
+            <p className="text-xs text-slate-500 mt-0.5">Частично</p>
           </div>
-          <div className="text-center">
-            <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-2">
-              <AlertCircle size={24} className="text-red-400" />
+          <div className="bg-[#fdf0ec] rounded-2xl p-4 text-center">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mx-auto mb-2 shadow-sm">
+              <AlertCircle size={20} className="text-[#f4724e]" />
             </div>
-            <p className="text-2xl font-bold text-red-500">{unpaid}</p>
-            <p className="text-xs text-slate-500">Не оплачено</p>
+            <p className="text-2xl font-bold text-[#f4724e]">{unpaid}</p>
+            <p className="text-xs text-slate-500 mt-0.5">Не оплачено</p>
           </div>
-          <div className="text-center">
-            <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-2">
-              <Clock size={24} className="text-slate-500" />
+          <div className="bg-slate-100 rounded-2xl p-4 text-center">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mx-auto mb-2 shadow-sm">
+              <Clock size={20} className="text-slate-400" />
             </div>
-            <p className="text-2xl font-bold text-slate-600">{noData}</p>
-            <p className="text-xs text-slate-500">Нет данных</p>
+            <p className="text-2xl font-bold text-slate-500">{noData}</p>
+            <p className="text-xs text-slate-500 mt-0.5">Нет данных</p>
           </div>
         </div>
 
         {/* Progress bar */}
         {totalPlanned > 0 && (
-          <div className="mt-4">
-            <div className="flex justify-between text-xs text-slate-500 mb-1">
+          <div className="mt-5">
+            <div className="flex justify-between text-xs text-slate-400 mb-1.5">
               <span>Собрано</span>
-              <span>{Math.round((totalActual / totalPlanned) * 100)}%</span>
+              <span className="font-semibold text-slate-600">{Math.round((totalActual / totalPlanned) * 100)}%</span>
             </div>
-            <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-2 bg-[#f0ebf8] rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(100, (totalActual / totalPlanned) * 100)}%` }}
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${Math.min(100, (totalActual / totalPlanned) * 100)}%`,
+                  background: 'linear-gradient(90deg, #2ec4a9, #967BB6)',
+                }}
               />
             </div>
-            <div className="flex justify-between text-xs mt-1">
-              <span className="text-green-600 font-medium">{formatCurrency(totalActual)}</span>
+            <div className="flex justify-between text-xs mt-1.5">
+              <span className="text-[#2ec4a9] font-semibold">{formatCurrency(totalActual)}</span>
               <span className="text-slate-400">{formatCurrency(totalPlanned)}</span>
             </div>
           </div>
@@ -165,8 +166,8 @@ export default function Dashboard({ objects, categories, periodSelection, onSele
       </div>
 
       {/* By Category */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-        <h3 className="font-semibold text-slate-700 mb-4">По категориям</h3>
+      <div className="bg-white rounded-3xl p-6 shadow-sm border border-[#ede9f4]">
+        <h3 className="font-bold text-slate-800 mb-5">По категориям</h3>
         <div className="space-y-3">
           {categories.map((cat) => {
             const catObjects = activeObjects.filter((o) => o.categoryId === cat.id);
@@ -204,7 +205,7 @@ export default function Dashboard({ objects, categories, periodSelection, onSele
                     <span className="text-xs text-slate-400"> / {formatCurrency(catPlanned)}</span>
                   </div>
                 </div>
-                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-[#f0ebf8] rounded-full overflow-hidden">
                   <div
                     className={`h-full ${barColors[cat.color] ?? 'bg-slate-500'} rounded-full transition-all duration-500`}
                     style={{ width: `${Math.min(100, pct)}%` }}
@@ -221,7 +222,7 @@ export default function Dashboard({ objects, categories, periodSelection, onSele
 
       {/* Archive info */}
       {archivedObjects.length > 0 && (
-        <div className="bg-slate-100 rounded-2xl p-4 flex items-center gap-3">
+        <div className="bg-white rounded-3xl p-4 border border-[#ede9f4] flex items-center gap-3">
           <span className="text-2xl">📁</span>
           <div>
             <p className="text-sm font-medium text-slate-700">В архиве: {archivedObjects.length} объект(ов)</p>

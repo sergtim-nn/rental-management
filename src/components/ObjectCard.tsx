@@ -138,7 +138,7 @@ export default function ObjectCard({
 
   return (
     <div
-      className={`bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow ${obj.isArchived ? 'opacity-70' : ''}`}
+      className={`bg-white rounded-3xl shadow-sm border border-[#ede9f4] overflow-hidden flex flex-col hover:shadow-md hover:border-[#d8d0e8] transition-all ${obj.isArchived ? 'opacity-70' : ''}`}
     >
       {/* Card Header */}
       <div
@@ -240,7 +240,7 @@ export default function ObjectCard({
         )}
 
         {/* Payment Summary */}
-        <div className="bg-slate-50 rounded-xl p-3 space-y-2">
+        <div className="bg-[#faf9f6] rounded-2xl p-3 space-y-2 border border-[#ede9f4]">
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500">Аренда</span>
             <div className="flex items-center gap-2">
@@ -271,19 +271,19 @@ export default function ObjectCard({
       </div>
 
       {/* Card Footer Actions */}
-      <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-end gap-2">
+      <div className="px-4 py-3 border-t border-[#ede9f4] flex items-center justify-end gap-2">
         {obj.isArchived ? (
           <>
             <button
               onClick={(e) => { e.stopPropagation(); onRestore(); }}
-              className="flex items-center gap-1.5 text-xs text-green-600 hover:text-green-700 font-medium px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-[#2ec4a9] hover:text-teal-700 font-medium px-3 py-1.5 rounded-full hover:bg-[#e6f9f6] transition-colors"
             >
               <RotateCcw size={13} />
               Восстановить
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-[#f4724e] hover:text-red-700 font-medium px-3 py-1.5 rounded-full hover:bg-[#fdf0ec] transition-colors"
             >
               <Trash2 size={13} />
               Удалить
@@ -293,14 +293,14 @@ export default function ObjectCard({
           <>
             <button
               onClick={(e) => { e.stopPropagation(); onClick(); }}
-              className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-[#967BB6] hover:text-[#6d548c] font-medium px-3 py-1.5 rounded-full hover:bg-[#f0ebf8] transition-colors"
             >
               <Edit2 size={13} />
               Открыть
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onArchive(); }}
-              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 font-medium px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 font-medium px-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors"
             >
               <Archive size={13} />
               В архив
