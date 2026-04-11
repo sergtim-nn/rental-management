@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Category, Notification } from '../types';
 import {
   Plus,
@@ -80,6 +80,28 @@ export default function Sidebar({
     name: string;
     activeObjects: number;
   } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    categoryId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const closeContextMenu = () => setContextMenu(null);
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setContextMenu(null);
+    };
+
+    window.addEventListener('click', closeContextMenu);
+    window.addEventListener('scroll', closeContextMenu, true);
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      window.removeEventListener('click', closeContextMenu);
+      window.removeEventListener('scroll', closeContextMenu, true);
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
 
   const resetAddForm = () => {
     setNewName('');
@@ -112,6 +134,7 @@ export default function Sidebar({
     setEditIcon(cat.icon);
     setEditColor(cat.color);
     setEditError('');
+    setContextMenu(null);
     setOpenActionsId(null);
     setActionError('');
   };
@@ -151,12 +174,14 @@ export default function Sidebar({
         name: category?.name ?? 'категория',
         activeObjects,
       });
+      setContextMenu(null);
       setOpenActionsId(null);
       setActionError('');
       return;
     }
 
     setBusyCategoryAction(id);
+    setContextMenu(null);
     setOpenActionsId(null);
     setActionError('');
     const deleted = await onDeleteCategory(id);
@@ -168,6 +193,7 @@ export default function Sidebar({
 
   const handleMoveCategory = async (id: string, direction: 'up' | 'down') => {
     setBusyCategoryAction(id);
+    setContextMenu(null);
     setOpenActionsId(null);
     setActionError('');
     const moved = await onReorderCategory(id, direction);
@@ -323,8 +349,23 @@ export default function Sidebar({
             const canMoveUp = index > 0;
             const canMoveDown = index < categories.length - 1;
             const isBusy = busyCategoryAction === cat.id;
+            const isContextMenuOpen = contextMenu?.categoryId === cat.id;
             return (
-              <div key={cat.id} className="group relative">
+              <div
+                key={cat.id}
+                className="relative"
+                onContextMenu={(e) => {
+                  if (editingId === cat.id) return;
+                  e.preventDefault();
+                  setActionError('');
+                  setOpenActionsId(null);
+                  setContextMenu({
+                    categoryId: cat.id,
+                    x: Math.min(e.clientX, window.innerWidth - 220),
+                    y: Math.min(e.clientY, window.innerHeight - 220),
+                  });
+                }}
+              >
                 {editingId === cat.id ? (
                   <div className="px-2 py-2 space-y-2">
                     <input
@@ -398,36 +439,6 @@ export default function Sidebar({
                 {/* Edit/Delete actions */}
                 {!editingId && (
                   <>
-                    <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden lg:group-hover:flex items-center gap-0.5 bg-white rounded-lg shadow-sm border border-slate-100 p-0.5">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); void handleMoveCategory(cat.id, 'up'); }}
-                        disabled={!canMoveUp || isBusy}
-                        className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-700 disabled:opacity-40 disabled:hover:bg-transparent"
-                      >
-                        <ChevronUp size={12} />
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); void handleMoveCategory(cat.id, 'down'); }}
-                        disabled={!canMoveDown || isBusy}
-                        className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-700 disabled:opacity-40 disabled:hover:bg-transparent"
-                      >
-                        <ChevronDown size={12} />
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleEditStart(cat); }}
-                        className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-700"
-                      >
-                        <Edit2 size={12} />
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); void handleDeleteCategory(cat.id); }}
-                        disabled={isBusy}
-                        className="p-1 hover:bg-red-50 rounded text-slate-500 hover:text-red-600 disabled:opacity-40 disabled:hover:bg-transparent"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-
                     <div className="absolute right-1 top-1/2 -translate-y-1/2 lg:hidden">
                       {openActionsId === cat.id ? (
                         <div className="flex items-center gap-0.5 bg-white rounded-lg shadow-sm border border-slate-100 p-0.5">
@@ -484,6 +495,46 @@ export default function Sidebar({
                         </button>
                       )}
                     </div>
+
+                    {isContextMenuOpen && (
+                      <div
+                        className="fixed z-50 hidden min-w-[200px] rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl lg:block"
+                        style={{ left: contextMenu.x, top: contextMenu.y }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          onClick={() => void handleMoveCategory(cat.id, 'up')}
+                          disabled={!canMoveUp || isBusy}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ChevronUp size={14} />
+                          Переместить выше
+                        </button>
+                        <button
+                          onClick={() => void handleMoveCategory(cat.id, 'down')}
+                          disabled={!canMoveDown || isBusy}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ChevronDown size={14} />
+                          Переместить ниже
+                        </button>
+                        <button
+                          onClick={() => handleEditStart(cat)}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                        >
+                          <Edit2 size={14} />
+                          Редактировать
+                        </button>
+                        <button
+                          onClick={() => void handleDeleteCategory(cat.id)}
+                          disabled={isBusy}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <Trash2 size={14} />
+                          Удалить
+                        </button>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

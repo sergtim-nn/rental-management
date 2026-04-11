@@ -40,6 +40,11 @@ interface ObjectModalProps {
       currentPayment: RealEstateObject['currentPayment'];
     }
   ) => void;
+  onUpdateHistoryRecord: (
+    objectId: string,
+    recordId: string,
+    updates: Partial<PaymentRecord>
+  ) => void;
 }
 
 const MONTHS_RU = [
@@ -119,6 +124,7 @@ export default function ObjectModal({
   onAddDocument,
   onRemoveDocument,
   onSaveToHistory,
+  onUpdateHistoryRecord,
 }: ObjectModalProps) {
   // Form state
   const [categoryId, setCategoryId] = useState(obj?.categoryId ?? defaultCategoryId);
@@ -148,11 +154,12 @@ export default function ObjectModal({
 
   // Current payment
   const cp = obj?.currentPayment ?? emptyCurrentPayment();
+  const today = new Date().toISOString().split('T')[0];
   const [actualRent, setActualRent] = useState(cp.actualRent);
-  const [rentPaymentDate, setRentPaymentDate] = useState(cp.rentPaymentDate);
+  const [rentPaymentDate, setRentPaymentDate] = useState(cp.rentPaymentDate || today);
   const [rentPaymentType, setRentPaymentType] = useState<'cash' | 'card'>(cp.rentPaymentType);
   const [actualUtilities, setActualUtilities] = useState(cp.actualUtilities);
-  const [utilitiesPaymentDate, setUtilitiesPaymentDate] = useState(cp.utilitiesPaymentDate);
+  const [utilitiesPaymentDate, setUtilitiesPaymentDate] = useState(cp.utilitiesPaymentDate || today);
   const [utilitiesPaymentType, setUtilitiesPaymentType] = useState<'cash' | 'card'>(cp.utilitiesPaymentType);
   const [note, setNote] = useState(cp.note ?? '');
 
@@ -186,7 +193,7 @@ export default function ObjectModal({
       plannedRent,
       plannedUtilities,
       currentPayment: {
-        date: new Date().toISOString().split('T')[0],
+        date: today,
         actualRent,
         rentPaymentDate,
         rentPaymentType,
@@ -205,7 +212,7 @@ export default function ObjectModal({
       plannedRent,
       plannedUtilities,
       currentPayment: {
-        date: new Date().toISOString().split('T')[0],
+        date: today,
         actualRent,
         rentPaymentDate,
         rentPaymentType,
@@ -218,9 +225,9 @@ export default function ObjectModal({
     setSavedPeriod(period);
     // reset current payment fields
     setActualRent(0);
-    setRentPaymentDate('');
+    setRentPaymentDate(today);
     setActualUtilities(0);
-    setUtilitiesPaymentDate('');
+    setUtilitiesPaymentDate(today);
     setNote('');
     setTimeout(() => setSavedPeriod(null), 3000);
   };
@@ -530,7 +537,15 @@ export default function ObjectModal({
                     <p className="text-sm text-slate-400 text-center py-4">История пуста</p>
                   ) : (
                     obj?.paymentHistory.map((record) => (
-                      <HistoryRecord key={record.id} record={record} />
+                      <HistoryRecord
+                        key={record.id}
+                        record={record}
+                        isParking={isParking}
+                        onSave={(updates) => {
+                          if (!obj) return;
+                          onUpdateHistoryRecord(obj.id, record.id, updates);
+                        }}
+                      />
                     ))
                   )}
                 </div>
@@ -608,11 +623,63 @@ export default function ObjectModal({
   );
 }
 
-function HistoryRecord({ record }: { record: PaymentRecord }) {
+function HistoryRecord({
+  record,
+  isParking,
+  onSave,
+}: {
+  record: PaymentRecord;
+  isParking: boolean;
+  onSave: (updates: Partial<PaymentRecord>) => void;
+}) {
   const [open, setOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [period, setPeriod] = useState(record.period);
+  const [date, setDate] = useState(record.date);
+  const [plannedRent, setPlannedRent] = useState(record.plannedRent);
+  const [actualRent, setActualRent] = useState(record.actualRent);
+  const [rentPaymentDate, setRentPaymentDate] = useState(record.rentPaymentDate);
+  const [rentPaymentType, setRentPaymentType] = useState<'cash' | 'card'>(record.rentPaymentType);
+  const [plannedUtilities, setPlannedUtilities] = useState(record.plannedUtilities);
+  const [actualUtilities, setActualUtilities] = useState(record.actualUtilities);
+  const [utilitiesPaymentDate, setUtilitiesPaymentDate] = useState(record.utilitiesPaymentDate);
+  const [utilitiesPaymentType, setUtilitiesPaymentType] = useState<'cash' | 'card'>(record.utilitiesPaymentType);
+  const [note, setNote] = useState(record.note ?? '');
   const totalPlanned = record.plannedRent + record.plannedUtilities;
   const totalActual = record.actualRent + record.actualUtilities;
   const diff = totalActual - totalPlanned;
+
+  const handleCancel = () => {
+    setPeriod(record.period);
+    setDate(record.date);
+    setPlannedRent(record.plannedRent);
+    setActualRent(record.actualRent);
+    setRentPaymentDate(record.rentPaymentDate);
+    setRentPaymentType(record.rentPaymentType);
+    setPlannedUtilities(record.plannedUtilities);
+    setActualUtilities(record.actualUtilities);
+    setUtilitiesPaymentDate(record.utilitiesPaymentDate);
+    setUtilitiesPaymentType(record.utilitiesPaymentType);
+    setNote(record.note ?? '');
+    setIsEditing(false);
+  };
+
+  const handleSave = () => {
+    onSave({
+      period,
+      date,
+      plannedRent,
+      actualRent,
+      rentPaymentDate,
+      rentPaymentType,
+      plannedUtilities: isParking ? 0 : plannedUtilities,
+      actualUtilities: isParking ? 0 : actualUtilities,
+      utilitiesPaymentDate: isParking ? '' : utilitiesPaymentDate,
+      utilitiesPaymentType,
+      note,
+    });
+    setIsEditing(false);
+  };
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
@@ -634,24 +701,119 @@ function HistoryRecord({ record }: { record: PaymentRecord }) {
         {open ? <ChevronUp size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
       </button>
       {open && (
-        <div className="px-4 pb-4 pt-1 border-t border-slate-100 grid grid-cols-2 gap-3 text-xs">
-          <div className="space-y-1.5">
-            <p className="font-semibold text-slate-500 uppercase tracking-wider">Аренда</p>
-            <div className="flex justify-between"><span className="text-slate-500">План:</span><span className="font-medium">{formatCurrency(record.plannedRent)}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Факт:</span><span className="font-medium">{formatCurrency(record.actualRent)}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Дата:</span><span className="font-medium">{formatDate(record.rentPaymentDate)}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Тип:</span><span className="font-medium">{record.rentPaymentType === 'cash' ? '💵 Нал' : '💳 Карта'}</span></div>
+        <div className="px-4 pb-4 pt-1 border-t border-slate-100 space-y-4 text-xs">
+          <div className="flex items-center justify-between pt-3">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              {isEditing ? 'Редактирование записи' : 'Детали периода'}
+            </p>
+            {isEditing ? (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700 transition-colors"
+                >
+                  Сохранить
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  Отмена
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Изменить
+              </button>
+            )}
           </div>
-          <div className="space-y-1.5">
-            <p className="font-semibold text-slate-500 uppercase tracking-wider">Коммунальные</p>
-            <div className="flex justify-between"><span className="text-slate-500">План:</span><span className="font-medium">{formatCurrency(record.plannedUtilities)}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Факт:</span><span className="font-medium">{formatCurrency(record.actualUtilities)}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Дата:</span><span className="font-medium">{formatDate(record.utilitiesPaymentDate)}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Тип:</span><span className="font-medium">{record.utilitiesPaymentType === 'cash' ? '💵 Нал' : '💳 Карта'}</span></div>
-          </div>
-          {record.note && (
-            <div className="col-span-2 bg-slate-50 rounded-lg p-2">
-              <p className="text-slate-500">Заметка: {record.note}</p>
+
+          {isEditing ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Период">
+                  <input type="month" className={inputCls} value={period} onChange={(e) => setPeriod(e.target.value)} />
+                </Field>
+                <Field label="Дата записи">
+                  <input type="date" className={inputCls} value={date} onChange={(e) => setDate(e.target.value)} />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <p className="font-semibold text-slate-600">Аренда</p>
+                  <Field label="План">
+                    <input type="number" className={inputCls} value={plannedRent || ''} onChange={(e) => setPlannedRent(Number(e.target.value))} />
+                  </Field>
+                  <Field label="Факт">
+                    <input type="number" className={inputCls} value={actualRent || ''} onChange={(e) => setActualRent(Number(e.target.value))} />
+                  </Field>
+                  <Field label="Дата оплаты">
+                    <input type="date" className={inputCls} value={rentPaymentDate} onChange={(e) => setRentPaymentDate(e.target.value)} />
+                  </Field>
+                  <Field label="Способ оплаты">
+                    <PaymentTypeToggle value={rentPaymentType} onChange={setRentPaymentType} />
+                  </Field>
+                </div>
+
+                {!isParking && (
+                  <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="font-semibold text-slate-600">Коммунальные</p>
+                    <Field label="План">
+                      <input type="number" className={inputCls} value={plannedUtilities || ''} onChange={(e) => setPlannedUtilities(Number(e.target.value))} />
+                    </Field>
+                    <Field label="Факт">
+                      <input type="number" className={inputCls} value={actualUtilities || ''} onChange={(e) => setActualUtilities(Number(e.target.value))} />
+                    </Field>
+                    <Field label="Дата оплаты">
+                      <input type="date" className={inputCls} value={utilitiesPaymentDate} onChange={(e) => setUtilitiesPaymentDate(e.target.value)} />
+                    </Field>
+                    <Field label="Способ оплаты">
+                      <PaymentTypeToggle value={utilitiesPaymentType} onChange={setUtilitiesPaymentType} />
+                    </Field>
+                  </div>
+                )}
+              </div>
+
+              <Field label="Заметка">
+                <textarea
+                  className={`${inputCls} resize-none`}
+                  rows={2}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Комментарий к сохранённой записи"
+                />
+              </Field>
+            </div>
+          ) : (
+            <div className={`grid gap-3 ${isParking ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              <div className="space-y-1.5">
+                <p className="font-semibold text-slate-500 uppercase tracking-wider">Аренда</p>
+                <div className="flex justify-between"><span className="text-slate-500">План:</span><span className="font-medium">{formatCurrency(record.plannedRent)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Факт:</span><span className="font-medium">{formatCurrency(record.actualRent)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Дата:</span><span className="font-medium">{formatDate(record.rentPaymentDate)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Тип:</span><span className="font-medium">{record.rentPaymentType === 'cash' ? '💵 Нал' : '💳 Карта'}</span></div>
+              </div>
+              {!isParking && (
+                <div className="space-y-1.5">
+                  <p className="font-semibold text-slate-500 uppercase tracking-wider">Коммунальные</p>
+                  <div className="flex justify-between"><span className="text-slate-500">План:</span><span className="font-medium">{formatCurrency(record.plannedUtilities)}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Факт:</span><span className="font-medium">{formatCurrency(record.actualUtilities)}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Дата:</span><span className="font-medium">{formatDate(record.utilitiesPaymentDate)}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Тип:</span><span className="font-medium">{record.utilitiesPaymentType === 'cash' ? '💵 Нал' : '💳 Карта'}</span></div>
+                </div>
+              )}
+              {record.note && (
+                <div className={`${isParking ? '' : 'col-span-2'} bg-slate-50 rounded-lg p-2`}>
+                  <p className="text-slate-500">Заметка: {record.note}</p>
+                </div>
+              )}
             </div>
           )}
         </div>

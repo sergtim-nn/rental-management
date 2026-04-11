@@ -77,13 +77,14 @@ export function getCurrentPeriod(): string {
 }
 
 export function emptyCurrentPayment(): RealEstateObject['currentPayment'] {
+  const today = new Date().toISOString().split('T')[0];
   return {
-    date: new Date().toISOString().split('T')[0],
-    rentPaymentDate: '',
+    date: today,
+    rentPaymentDate: today,
     actualRent: 0,
     rentPaymentType: 'cash',
     actualUtilities: 0,
-    utilitiesPaymentDate: '',
+    utilitiesPaymentDate: today,
     utilitiesPaymentType: 'cash',
     note: '',
   };

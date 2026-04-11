@@ -310,9 +310,9 @@ export function useAppState() {
         o.id === objectId
           ? {
               ...o,
-              paymentHistory: o.paymentHistory.map((p) =>
-                p.id === recordId ? updated : p
-              ),
+              paymentHistory: o.paymentHistory
+                .map((p) => (p.id === recordId ? updated : p))
+                .sort((a, b) => b.period.localeCompare(a.period)),
             }
           : o
       ),
@@ -325,9 +325,9 @@ export function useAppState() {
           o.id === objectId
             ? {
                 ...o,
-                paymentHistory: o.paymentHistory.map((p) =>
-                  p.id === recordId ? record : p
-                ),
+                paymentHistory: o.paymentHistory
+                  .map((p) => (p.id === recordId ? record : p))
+                  .sort((a, b) => b.period.localeCompare(a.period)),
               }
             : o
         ),
@@ -341,9 +341,9 @@ export function useAppState() {
         o.id === objectId
           ? {
               ...o,
-              paymentHistory: o.paymentHistory.map((p) =>
-                p.id === recordId ? serverRecord : p
-              ),
+              paymentHistory: o.paymentHistory
+                .map((p) => (p.id === recordId ? serverRecord : p))
+                .sort((a, b) => b.period.localeCompare(a.period)),
             }
           : o
       ),
