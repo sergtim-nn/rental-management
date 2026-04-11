@@ -68,7 +68,7 @@ export function useAppState() {
   // ─── Categories ───────────────────────────────────────────────────────────
   const addCategory = useCallback(async (name: string, icon: string, color: string) => {
     const id = generateId();
-    const newCat: Category = { id, name, icon, color, isDefault: false, order: Date.now() };
+    const newCat: Category = { id, name, icon, color, isDefault: false, order: stateRef.current.categories.length };
     const created = await api.createCategory(newCat).catch((e: Error) => {
       console.error('Failed to create category:', e);
       return null;
