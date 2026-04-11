@@ -44,27 +44,12 @@ export default function App() {
   const [modalObjectId, setModalObjectId] = useState<string | null>(null);
   const [isModalNew, setIsModalNew] = useState(false);
 
-  // ─── Auth ────────────────────────────────────────────────────────────────
-  if (!isAuthenticated) {
-    return <LoginScreen onLogin={login} />;
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <div className="text-slate-400 text-sm">Загрузка данных...</div>
-      </div>
-    );
-  }
-
-  // ─── Derived state ────────────────────────────────────────────────────────
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+  // ─── Derived state (все useMemo до любых early return) ───────────────────
   const notifications = useMemo(
     () => getUpcomingNotifications(state.objects, state.categories, state.notificationDaysBefore),
     [state.objects, state.categories, state.notificationDaysBefore]
   );
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const categoryObjects = useMemo(() => {
     let objs = state.objects.filter(
       (o) => !o.isArchived && o.categoryId === state.activeCategoryId
@@ -82,7 +67,6 @@ export default function App() {
     return objs;
   }, [state.objects, state.activeCategoryId, searchQuery]);
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const archivedObjects = useMemo(() => {
     let objs = state.objects.filter((o) => o.isArchived);
     if (searchQuery.trim()) {
@@ -97,7 +81,6 @@ export default function App() {
     return objs;
   }, [state.objects, searchQuery]);
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const objectCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     state.objects.filter((o) => !o.isArchived).forEach((o) => {
@@ -106,11 +89,38 @@ export default function App() {
     return counts;
   }, [state.objects]);
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const modalObject = useMemo(
     () => state.objects.find((o) => o.id === modalObjectId) ?? null,
     [state.objects, modalObjectId]
   );
+
+  const activeCategory = useMemo(
+    () => state.categories.find((c) => c.id === state.activeCategoryId),
+    [state.categories, state.activeCategoryId]
+  );
+
+  const pageTitle = useMemo(() => {
+    switch (activeView) {
+      case 'dashboard': return 'Дашборд';
+      case 'notifications': return 'Уведомления';
+      case 'archive': return 'Архив';
+      case 'settings': return 'Настройки';
+      case 'category': return activeCategory?.name ?? 'Объекты';
+    }
+  }, [activeView, activeCategory]);
+
+  // ─── Auth (после всех хуков) ──────────────────────────────────────────────
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={login} />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="text-slate-400 text-sm">Загрузка данных...</div>
+      </div>
+    );
+  }
 
   // ─── Handlers ────────────────────────────────────────────────────────────
   const handleSelectCategory = (id: string) => {
@@ -168,19 +178,6 @@ export default function App() {
   const handleReset = async () => {
     await resetState();
   };
-
-  const activeCategory = state.categories.find((c) => c.id === state.activeCategoryId);
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const pageTitle = useMemo(() => {
-    switch (activeView) {
-      case 'dashboard': return 'Дашборд';
-      case 'notifications': return 'Уведомления';
-      case 'archive': return 'Архив';
-      case 'settings': return 'Настройки';
-      case 'category': return activeCategory?.name ?? 'Объекты';
-    }
-  }, [activeView, activeCategory]);
 
   const showSearchAndAdd = activeView === 'category' || activeView === 'archive';
 
