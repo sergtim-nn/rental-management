@@ -44,6 +44,7 @@ interface ObjectModalProps {
     recordId: string,
     updates: Partial<PaymentRecord>
   ) => void;
+  onDeleteHistoryRecord: (objectId: string, recordId: string) => Promise<boolean>;
 }
 
 const MONTHS_RU = [
@@ -124,6 +125,7 @@ export default function ObjectModal({
   onRemoveDocument,
   onSaveToHistory,
   onUpdateHistoryRecord,
+  onDeleteHistoryRecord,
 }: ObjectModalProps) {
   // Form state
   const [categoryId, setCategoryId] = useState(obj?.categoryId ?? defaultCategoryId);
@@ -549,6 +551,10 @@ export default function ObjectModal({
                           if (!obj) return;
                           onUpdateHistoryRecord(obj.id, record.id, updates);
                         }}
+                        onDelete={async () => {
+                          if (!obj) return false;
+                          return onDeleteHistoryRecord(obj.id, record.id);
+                        }}
                       />
                     ))
                   )}
@@ -631,13 +637,16 @@ function HistoryRecord({
   record,
   isParking,
   onSave,
+  onDelete,
 }: {
   record: PaymentRecord;
   isParking: boolean;
   onSave: (updates: Partial<PaymentRecord>) => void;
+  onDelete: () => Promise<boolean>;
 }) {
   const [open, setOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [period, setPeriod] = useState(record.period);
   const [date, setDate] = useState(record.date);
   const [plannedRent, setPlannedRent] = useState(record.plannedRent);
@@ -685,6 +694,19 @@ function HistoryRecord({
     setIsEditing(false);
   };
 
+  const handleDelete = async () => {
+    const confirmed = window.confirm(`Удалить оплату за ${formatPeriod(record.period)}? Это действие нельзя отменить.`);
+    if (!confirmed) return;
+    setIsDeleting(true);
+    const deleted = await onDelete();
+    setIsDeleting(false);
+    if (!deleted) {
+      window.alert('Не удалось удалить оплату. Попробуйте ещё раз.');
+      return;
+    }
+    setOpen(false);
+  };
+
   return (
     <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
       <button
@@ -728,13 +750,23 @@ function HistoryRecord({
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => setIsEditing(true)}
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                Изменить
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  Изменить
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isDeleting ? 'Удаление...' : 'Удалить'}
+                </button>
+              </div>
             )}
           </div>
 

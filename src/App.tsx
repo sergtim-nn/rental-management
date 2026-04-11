@@ -35,6 +35,7 @@ export default function App() {
     deleteObject,
     saveCurrentPaymentToHistory,
     updatePaymentRecord,
+    deletePaymentRecord,
     addDocument,
     removeDocument,
     setNotificationDays,
@@ -483,6 +484,7 @@ export default function App() {
           onRemoveDocument={handleRemoveDocument}
           onSaveToHistory={handleSaveToHistory}
           onUpdateHistoryRecord={updatePaymentRecord}
+          onDeleteHistoryRecord={deletePaymentRecord}
         />
       )}
     </div>

@@ -363,6 +363,40 @@ export function useAppState() {
     }));
   }, []);
 
+  const deletePaymentRecord = useCallback(async (objectId: string, recordId: string) => {
+    const obj = stateRef.current.objects.find((o) => o.id === objectId);
+    if (!obj) return false;
+    const previousHistory = obj.paymentHistory;
+    if (!previousHistory.some((record) => record.id === recordId)) return false;
+
+    setState((s) => ({
+      ...s,
+      objects: s.objects.map((o) =>
+        o.id === objectId
+          ? {
+              ...o,
+              paymentHistory: o.paymentHistory.filter((record) => record.id !== recordId),
+            }
+          : o
+      ),
+    }));
+
+    const deleted = await api.deletePayment(objectId, recordId).then(() => true).catch((err: Error) => {
+      console.error('Failed to delete payment record:', err);
+      setState((s) => ({
+        ...s,
+        objects: s.objects.map((o) =>
+          o.id === objectId
+            ? { ...o, paymentHistory: previousHistory }
+            : o
+        ),
+      }));
+      return false;
+    });
+
+    return deleted;
+  }, []);
+
   // ─── Documents ────────────────────────────────────────────────────────────
   const addDocument = useCallback(async (objectId: string, file: File) => {
     const doc = await api.uploadDocument(objectId, file).catch((err: Error) => {
@@ -461,6 +495,7 @@ export function useAppState() {
     deleteObject,
     saveCurrentPaymentToHistory,
     updatePaymentRecord,
+    deletePaymentRecord,
     addDocument,
     removeDocument,
     setNotificationDays,
