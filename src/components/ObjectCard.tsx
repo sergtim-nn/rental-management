@@ -1,17 +1,13 @@
 import { RealEstateObject, Category } from '../types';
-import { formatCurrency, formatDate, formatPeriod } from '../utils/notifications';
+import { formatCurrency, formatDate } from '../utils/notifications';
 import {
   PeriodSelection,
   formatSelectionLabel,
   getPaymentSummaryForSelection,
 } from '../utils/payments';
 import {
-  Phone,
-  Send,
   MapPin,
   User,
-  Calendar,
-  ChevronRight,
   Archive,
   Edit2,
   Trash2,
@@ -20,6 +16,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
+  Phone,
+  Send,
 } from 'lucide-react';
 
 interface ObjectCardProps {
@@ -32,47 +30,16 @@ interface ObjectCardProps {
   onDelete: () => void;
 }
 
-const CATEGORY_COLORS: Record<string, { header: string; badge: string; icon: string }> = {
-  blue: {
-    header: 'from-blue-600 to-blue-700',
-    badge: 'bg-blue-100 text-blue-700',
-    icon: 'bg-blue-500/20 text-blue-100',
-  },
-  green: {
-    header: 'from-green-600 to-green-700',
-    badge: 'bg-green-100 text-green-700',
-    icon: 'bg-green-500/20 text-green-100',
-  },
-  purple: {
-    header: 'from-purple-600 to-purple-700',
-    badge: 'bg-purple-100 text-purple-700',
-    icon: 'bg-purple-500/20 text-purple-100',
-  },
-  orange: {
-    header: 'from-orange-500 to-orange-600',
-    badge: 'bg-orange-100 text-orange-700',
-    icon: 'bg-orange-500/20 text-orange-100',
-  },
-  red: {
-    header: 'from-red-600 to-red-700',
-    badge: 'bg-red-100 text-red-700',
-    icon: 'bg-red-500/20 text-red-100',
-  },
-  yellow: {
-    header: 'from-yellow-500 to-yellow-600',
-    badge: 'bg-yellow-100 text-yellow-700',
-    icon: 'bg-yellow-500/20 text-yellow-100',
-  },
-  pink: {
-    header: 'from-pink-600 to-pink-700',
-    badge: 'bg-pink-100 text-pink-700',
-    icon: 'bg-pink-500/20 text-pink-100',
-  },
-  teal: {
-    header: 'from-teal-600 to-teal-700',
-    badge: 'bg-teal-100 text-teal-700',
-    icon: 'bg-teal-500/20 text-teal-100',
-  },
+// Aura Ledger palette per category color
+const CATEGORY_COLORS: Record<string, { bg: string; text: string; dot: string; strip: string }> = {
+  blue:   { bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-500',   strip: 'bg-blue-500' },
+  green:  { bg: 'bg-green-50',  text: 'text-green-700',  dot: 'bg-green-500',  strip: 'bg-green-500' },
+  purple: { bg: 'bg-purple-50', text: 'text-purple-700', dot: 'bg-[#967BB6]',  strip: 'bg-[#967BB6]' },
+  orange: { bg: 'bg-orange-50', text: 'text-orange-700', dot: 'bg-orange-500', strip: 'bg-orange-500' },
+  red:    { bg: 'bg-red-50',    text: 'text-red-700',    dot: 'bg-red-500',    strip: 'bg-red-500' },
+  yellow: { bg: 'bg-yellow-50', text: 'text-yellow-700', dot: 'bg-yellow-500', strip: 'bg-yellow-500' },
+  pink:   { bg: 'bg-pink-50',   text: 'text-pink-700',   dot: 'bg-pink-500',   strip: 'bg-pink-500' },
+  teal:   { bg: 'bg-teal-50',   text: 'text-teal-700',   dot: 'bg-teal-500',   strip: 'bg-teal-500' },
 };
 
 function getPaymentStatus(planned: number, actual: number): {
@@ -80,39 +47,15 @@ function getPaymentStatus(planned: number, actual: number): {
   color: string;
   icon: React.ReactNode;
 } {
-  if (planned === 0 && actual === 0) {
-    return {
-      label: 'Нет данных',
-      color: 'text-slate-500 bg-slate-100',
-      icon: <Clock size={13} />,
-    };
-  }
-  if (actual === 0 && planned > 0) {
-    return {
-      label: 'Не оплачено',
-      color: 'text-red-600 bg-red-50',
-      icon: <AlertCircle size={13} />,
-    };
-  }
-  if (actual >= planned && planned > 0) {
-    return {
-      label: 'Оплачено',
-      color: 'text-green-600 bg-green-50',
-      icon: <CheckCircle2 size={13} />,
-    };
-  }
-  if (actual > 0 && actual < planned) {
-    return {
-      label: 'Частично',
-      color: 'text-yellow-600 bg-yellow-50',
-      icon: <Clock size={13} />,
-    };
-  }
-  return {
-    label: '—',
-    color: 'text-slate-400 bg-slate-50',
-    icon: null,
-  };
+  if (planned === 0 && actual === 0)
+    return { label: 'Нет данных', color: 'text-slate-500 bg-slate-100', icon: <Clock size={11} /> };
+  if (actual === 0 && planned > 0)
+    return { label: 'Не оплачено', color: 'text-[#f4724e] bg-[#fdf0ec]', icon: <AlertCircle size={11} /> };
+  if (actual >= planned && planned > 0)
+    return { label: 'Оплачено', color: 'text-[#2ec4a9] bg-[#e6f9f6]', icon: <CheckCircle2 size={11} /> };
+  if (actual > 0 && actual < planned)
+    return { label: 'Частично', color: 'text-amber-600 bg-amber-50', icon: <Clock size={11} /> };
+  return { label: '—', color: 'text-slate-400 bg-slate-50', icon: null };
 }
 
 export default function ObjectCard({
@@ -129,163 +72,125 @@ export default function ObjectCard({
   const payment = getPaymentSummaryForSelection(obj, periodSelection);
 
   const totalPlanned = isParking ? payment.plannedRent : payment.plannedRent + payment.plannedUtilities;
-  const totalActual = isParking
-    ? payment.actualRent
-    : payment.actualRent + payment.actualUtilities;
-
-  const rentStatus = getPaymentStatus(payment.plannedRent, payment.actualRent);
-  const utilStatus = getPaymentStatus(payment.plannedUtilities, payment.actualUtilities);
+  const totalActual  = isParking ? payment.actualRent  : payment.actualRent + payment.actualUtilities;
+  const overallStatus = getPaymentStatus(totalPlanned, totalActual);
 
   return (
     <div
-      className={`bg-white rounded-3xl shadow-sm border border-[#ede9f4] overflow-hidden flex flex-col hover:shadow-md hover:border-[#d8d0e8] transition-all ${obj.isArchived ? 'opacity-70' : ''}`}
+      className={`bg-white rounded-2xl border border-[#ede9f4] overflow-hidden flex flex-col hover:shadow-md hover:border-[#c9bedd] transition-all duration-200 cursor-pointer ${obj.isArchived ? 'opacity-60' : ''}`}
+      onClick={onClick}
     >
-      {/* Card Header */}
-      <div
-        className={`bg-gradient-to-br ${colors.header} p-4 relative`}
-      >
-        <div className="flex items-start justify-between">
-          <div>
-            <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-white/20 text-white mb-2`}>
-              <span>{category?.icon}</span>
-              <span>{category?.name ?? 'Без категории'}</span>
-            </span>
-            <div className="flex items-center gap-1.5 text-white">
-              <MapPin size={14} className="opacity-80 flex-shrink-0" />
-              <p className="text-sm font-semibold leading-tight">
-                {obj.street}, {obj.building}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 ml-2">
-            {obj.documents.length > 0 && (
-              <div className={`p-1.5 rounded-lg ${colors.icon}`}>
-                <FileText size={14} />
-              </div>
-            )}
-            <ChevronRight size={18} className="text-white/70" />
-          </div>
-        </div>
-      </div>
+      {/* Top colour strip */}
+      <div className={`h-1.5 w-full ${colors.strip}`} />
 
-      {/* Card Body */}
-      <div className="p-4 flex-1 space-y-3">
-        {/* Tenant */}
-        <div className="flex items-center gap-2">
-          <User size={14} className="text-slate-400 flex-shrink-0" />
-          <span className="text-sm font-medium text-slate-800 truncate">{obj.tenantName || '—'}</span>
-        </div>
-
-        {obj.tenantPhone && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <Phone size={13} className="text-slate-400 flex-shrink-0" />
-            <a
-              href={`tel:${obj.tenantPhone}`}
-              onClick={(e) => e.stopPropagation()}
-              className="text-xs text-slate-600 hover:text-blue-600 hover:underline transition-colors"
-            >
-              {obj.tenantPhone}
-            </a>
-            {obj.tenantTelegram && (
-              <>
-                <Send size={12} className="text-blue-400 ml-1 flex-shrink-0" />
-                <a
-                  href={
-                    obj.tenantTelegram.startsWith('+')
-                      ? `https://t.me/${obj.tenantTelegram}`
-                      : `https://t.me/${obj.tenantTelegram.replace(/^@/, '')}`
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-xs text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                >
-                  {obj.tenantTelegram}
-                </a>
-              </>
-            )}
-          </div>
-        )}
-
-        <div className="flex items-center gap-2">
-          <Calendar size={13} className="text-slate-400 flex-shrink-0" />
-          <span className="text-xs text-slate-500">Договор: {formatDate(obj.contractDate)}</span>
-        </div>
-
-        <div className="flex items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-slate-600">Период: {formatSelectionLabel(periodSelection)}</span>
-            {payment.paymentCount > 0 && (
-              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-600">
-                {payment.paymentCount} {payment.paymentCount === 1 ? 'оплата' : payment.paymentCount < 5 ? 'оплаты' : 'оплат'}
-              </span>
-            )}
-          </div>
-          <span className="text-slate-400">
-            {!payment.hasAnyData
-              ? 'Нет данных'
-              : payment.hasCurrentData && payment.hasHistoryData
-                ? 'История + текущий'
-                : payment.hasHistoryData
-                  ? payment.paymentCount > 1
-                    ? 'Несколько оплат'
-                    : 'Из истории'
-                  : 'Текущий расчёт'}
+      {/* Body */}
+      <div className="px-3 pt-3 pb-2 flex-1 space-y-2">
+        {/* Category + status row */}
+        <div className="flex items-center justify-between gap-1.5">
+          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${colors.bg} ${colors.text}`}>
+            <span className="text-[10px] leading-none">{category?.icon}</span>
+            {category?.name ?? 'Без категории'}
           </span>
+          <div className="flex items-center gap-1">
+            {obj.documents.length > 0 && (
+              <span className="p-0.5 rounded text-slate-400">
+                <FileText size={11} />
+              </span>
+            )}
+            <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${overallStatus.color}`}>
+              {overallStatus.icon}
+              {overallStatus.label}
+            </span>
+          </div>
         </div>
-        {periodSelection.mode === 'range' && payment.missingPeriods.length > 0 && (
-          <p className="text-xs text-amber-600">
-            Без данных за: {payment.missingPeriods.map((period) => formatPeriod(period)).join(', ')}
+
+        {/* Address */}
+        <div className="flex items-start gap-1.5">
+          <MapPin size={12} className="text-[#967BB6] flex-shrink-0 mt-0.5" />
+          <p className="text-xs font-bold text-slate-800 leading-snug line-clamp-2">
+            {obj.street}{obj.building ? `, ${obj.building}` : ''}
           </p>
+        </div>
+
+        {/* Tenant */}
+        <div className="flex items-center gap-1.5">
+          <User size={12} className="text-slate-400 flex-shrink-0" />
+          <span className="text-xs text-slate-600 truncate">{obj.tenantName || '—'}</span>
+        </div>
+
+        {/* Contact row — phone + telegram compact */}
+        {(obj.tenantPhone || obj.tenantTelegram) && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {obj.tenantPhone && (
+              <a
+                href={`tel:${obj.tenantPhone}`}
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-[#967BB6] transition-colors"
+              >
+                <Phone size={10} />
+                {obj.tenantPhone}
+              </a>
+            )}
+            {obj.tenantTelegram && (
+              <a
+                href={obj.tenantTelegram.startsWith('+')
+                  ? `https://t.me/${obj.tenantTelegram}`
+                  : `https://t.me/${obj.tenantTelegram.replace(/^@/, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1 text-[10px] text-blue-500 hover:text-blue-700 transition-colors"
+              >
+                <Send size={10} />
+                {obj.tenantTelegram}
+              </a>
+            )}
+          </div>
         )}
 
-        {/* Payment Summary */}
-        <div className="bg-[#faf9f6] rounded-2xl p-3 space-y-2 border border-[#ede9f4]">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500">Аренда</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-700">{formatCurrency(payment.actualRent)} / {formatCurrency(payment.plannedRent)}</span>
-              <span className={`inline-flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded-full ${rentStatus.color}`}>
-                {rentStatus.icon}
-                {rentStatus.label}
-              </span>
-            </div>
+        {/* Divider */}
+        <div className="border-t border-[#ede9f4]" />
+
+        {/* Financials */}
+        <div className="flex items-center justify-between gap-1">
+          <div>
+            <p className="text-[10px] text-slate-400 leading-none mb-0.5">
+              {formatSelectionLabel(periodSelection)}
+            </p>
+            <p className="text-sm font-bold text-slate-800 leading-tight">
+              {formatCurrency(totalActual)}
+            </p>
+            {totalPlanned > 0 && totalActual !== totalPlanned && (
+              <p className="text-[10px] text-slate-400 leading-none">
+                план {formatCurrency(totalPlanned)}
+              </p>
+            )}
           </div>
-          {!isParking && (
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">Коммунальные</span>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-700">{formatCurrency(payment.actualUtilities)} / {formatCurrency(payment.plannedUtilities)}</span>
-                <span className={`inline-flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded-full ${utilStatus.color}`}>
-                  {utilStatus.icon}
-                  {utilStatus.label}
-                </span>
-              </div>
-            </div>
-          )}
-          <div className="border-t border-slate-200 pt-2 flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600">Итого</span>
-            <span className="text-sm font-bold text-slate-800">{formatCurrency(totalActual)} / {formatCurrency(totalPlanned)}</span>
+          <div className="text-right">
+            <p className="text-[10px] text-slate-400 leading-none mb-0.5">Договор</p>
+            <p className="text-[10px] text-slate-500">{formatDate(obj.contractDate)}</p>
           </div>
         </div>
       </div>
 
-      {/* Card Footer Actions */}
-      <div className="px-4 py-3 border-t border-[#ede9f4] flex items-center justify-end gap-2">
+      {/* Footer actions */}
+      <div className="px-3 py-2 border-t border-[#ede9f4] flex items-center justify-end gap-1">
         {obj.isArchived ? (
           <>
             <button
               onClick={(e) => { e.stopPropagation(); onRestore(); }}
-              className="flex items-center gap-1.5 text-xs text-[#2ec4a9] hover:text-teal-700 font-medium px-3 py-1.5 rounded-full hover:bg-[#e6f9f6] transition-colors"
+              title="Восстановить"
+              className="flex items-center gap-1 text-[10px] text-[#2ec4a9] hover:text-teal-700 font-semibold px-2 py-1 rounded-full hover:bg-[#e6f9f6] transition-colors"
             >
-              <RotateCcw size={13} />
+              <RotateCcw size={11} />
               Восстановить
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="flex items-center gap-1.5 text-xs text-[#f4724e] hover:text-red-700 font-medium px-3 py-1.5 rounded-full hover:bg-[#fdf0ec] transition-colors"
+              title="Удалить"
+              className="flex items-center gap-1 text-[10px] text-[#f4724e] hover:text-red-700 font-semibold px-2 py-1 rounded-full hover:bg-[#fdf0ec] transition-colors"
             >
-              <Trash2 size={13} />
+              <Trash2 size={11} />
               Удалить
             </button>
           </>
@@ -293,17 +198,19 @@ export default function ObjectCard({
           <>
             <button
               onClick={(e) => { e.stopPropagation(); onClick(); }}
-              className="flex items-center gap-1.5 text-xs text-[#967BB6] hover:text-[#6d548c] font-medium px-3 py-1.5 rounded-full hover:bg-[#f0ebf8] transition-colors"
+              title="Открыть"
+              className="flex items-center gap-1 text-[10px] text-[#967BB6] hover:text-[#6d548c] font-semibold px-2 py-1 rounded-full hover:bg-[#f0ebf8] transition-colors"
             >
-              <Edit2 size={13} />
+              <Edit2 size={11} />
               Открыть
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onArchive(); }}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 font-medium px-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors"
+              title="В архив"
+              className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-slate-600 font-semibold px-2 py-1 rounded-full hover:bg-slate-100 transition-colors"
             >
-              <Archive size={13} />
-              В архив
+              <Archive size={11} />
+              Архив
             </button>
           </>
         )}

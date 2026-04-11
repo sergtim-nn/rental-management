@@ -221,7 +221,7 @@ export default function App() {
       <main className="flex-1 min-w-0 flex flex-col">
         {/* Top Bar */}
         <div className="bg-white/80 backdrop-blur-md border-b border-[#ede9f4] px-4 sm:px-6 py-3.5 sticky top-0 z-10">
-          <div className="flex items-center gap-3 max-w-6xl mx-auto">
+          <div className="flex items-center gap-3 max-w-[1600px] mx-auto">
             {/* Title */}
             <div className="flex items-center gap-2 ml-12 lg:ml-0">
               {activeView === 'category' && activeCategory && (
@@ -342,7 +342,7 @@ export default function App() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 p-4 sm:p-6 max-w-6xl mx-auto w-full">
+        <div className="flex-1 p-4 sm:p-5 max-w-[1600px] mx-auto w-full">
 
           {/* Dashboard */}
           {activeView === 'dashboard' && (
@@ -379,7 +379,7 @@ export default function App() {
                   }
                 />
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                   {categoryObjects.map((obj) => (
                     <ObjectCard
                       key={obj.id}
@@ -395,10 +395,10 @@ export default function App() {
                   {/* Add new card */}
                   <button
                     onClick={handleNewObject}
-                    className="border-2 border-dashed border-[#d8d0e8] rounded-3xl p-8 flex flex-col items-center justify-center gap-3 text-[#967BB6] hover:border-[#967BB6] hover:bg-[#f0ebf8] transition-all min-h-48"
+                    className="border-2 border-dashed border-[#d8d0e8] rounded-2xl p-4 flex flex-col items-center justify-center gap-2 text-[#967BB6] hover:border-[#967BB6] hover:bg-[#f0ebf8] transition-all min-h-[160px]"
                   >
-                    <Plus size={28} />
-                    <span className="text-sm font-medium">Добавить объект</span>
+                    <Plus size={22} />
+                    <span className="text-xs font-medium">Добавить объект</span>
                   </button>
                 </div>
               )}
@@ -415,7 +415,7 @@ export default function App() {
                   subtitle="Заархивированные объекты будут отображаться здесь"
                 />
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                   {archivedObjects.map((obj) => (
                     <ObjectCard
                       key={obj.id}
