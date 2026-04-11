@@ -176,7 +176,7 @@ export default function ObjectModal({
   const [showPayment, setShowPayment] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
   const [showDocs, setShowDocs] = useState(false);
-  const [savedPeriod, setSavedPeriod] = useState<string | null>(null);
+  const [savedPaymentMessage, setSavedPaymentMessage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -207,30 +207,31 @@ export default function ObjectModal({
     onSave(data);
   };
 
-  const handleSaveToHistory = () => {
+  const handleSavePaymentToHistory = (kind: 'rent' | 'utilities') => {
     const period = `${historyYear}-${String(historyMonth + 1).padStart(2, '0')}`;
     onSaveToHistory(period, {
       plannedRent,
       plannedUtilities,
       currentPayment: {
-        date: today,
-        actualRent,
-        rentPaymentDate,
+        date: kind === 'rent' ? (rentPaymentDate || today) : (utilitiesPaymentDate || today),
+        actualRent: kind === 'rent' ? actualRent : 0,
+        rentPaymentDate: kind === 'rent' ? rentPaymentDate : '',
         rentPaymentType,
-        actualUtilities,
-        utilitiesPaymentDate,
+        actualUtilities: kind === 'utilities' ? actualUtilities : 0,
+        utilitiesPaymentDate: kind === 'utilities' ? utilitiesPaymentDate : '',
         utilitiesPaymentType,
         note,
       },
     });
-    setSavedPeriod(period);
-    // reset current payment fields
-    setActualRent(0);
-    setRentPaymentDate(today);
-    setActualUtilities(0);
-    setUtilitiesPaymentDate(today);
-    setNote('');
-    setTimeout(() => setSavedPeriod(null), 3000);
+    setSavedPaymentMessage(`${kind === 'rent' ? 'Аренда' : 'Коммунальные'} за ${formatPeriod(period)} сохранены`);
+    if (kind === 'rent') {
+      setActualRent(0);
+      setRentPaymentDate(today);
+    } else {
+      setActualUtilities(0);
+      setUtilitiesPaymentDate(today);
+    }
+    setTimeout(() => setSavedPaymentMessage(null), 3000);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -259,7 +260,8 @@ export default function ObjectModal({
   const totalPlanned = isParking ? plannedRent : plannedRent + plannedUtilities;
   const totalActual = isParking ? actualRent : actualRent + actualUtilities;
   const diff = totalActual - totalPlanned;
-  const hasPaymentToSave = actualRent > 0 || actualUtilities > 0;
+  const canSaveRentPayment = actualRent > 0;
+  const canSaveUtilitiesPayment = actualUtilities > 0;
 
   const years = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
 
@@ -425,6 +427,40 @@ export default function ObjectModal({
                 <Field label="Способ оплаты">
                   <PaymentTypeToggle value={rentPaymentType} onChange={setRentPaymentType} />
                 </Field>
+                {!isNew && (
+                  <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+                      <Field label="Месяц">
+                        <select
+                          value={historyMonth}
+                          onChange={(e) => setHistoryMonth(Number(e.target.value))}
+                          className={inputCls}
+                        >
+                          {MONTHS_RU.map((m, i) => (
+                            <option key={i} value={i}>{m}</option>
+                          ))}
+                        </select>
+                      </Field>
+                      <Field label="Год">
+                        <select
+                          value={historyYear}
+                          onChange={(e) => setHistoryYear(Number(e.target.value))}
+                          className={inputCls}
+                        >
+                          {years.map((y) => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                      </Field>
+                      <button
+                        type="button"
+                        onClick={() => handleSavePaymentToHistory('rent')}
+                        disabled={!canSaveRentPayment}
+                        className="rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                      >
+                        Сохранить аренду
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Utilities */}
@@ -445,6 +481,40 @@ export default function ObjectModal({
                   <Field label="Способ оплаты">
                     <PaymentTypeToggle value={utilitiesPaymentType} onChange={setUtilitiesPaymentType} />
                   </Field>
+                  {!isNew && (
+                    <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+                        <Field label="Месяц">
+                          <select
+                            value={historyMonth}
+                            onChange={(e) => setHistoryMonth(Number(e.target.value))}
+                            className={inputCls}
+                          >
+                            {MONTHS_RU.map((m, i) => (
+                              <option key={i} value={i}>{m}</option>
+                            ))}
+                          </select>
+                        </Field>
+                        <Field label="Год">
+                          <select
+                            value={historyYear}
+                            onChange={(e) => setHistoryYear(Number(e.target.value))}
+                            className={inputCls}
+                          >
+                            {years.map((y) => <option key={y} value={y}>{y}</option>)}
+                          </select>
+                        </Field>
+                        <button
+                          type="button"
+                          onClick={() => handleSavePaymentToHistory('utilities')}
+                          disabled={!canSaveUtilitiesPayment}
+                          className="rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        >
+                          Сохранить коммунальные
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -480,49 +550,10 @@ export default function ObjectModal({
                 />
               </Field>
 
-              {!isNew && (
-                <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                    <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
-                      <Field label="Месяц оплаты для истории">
-                        <select
-                          value={historyMonth}
-                          onChange={(e) => setHistoryMonth(Number(e.target.value))}
-                          className={inputCls}
-                        >
-                          {MONTHS_RU.map((m, i) => (
-                            <option key={i} value={i}>{m}</option>
-                          ))}
-                        </select>
-                      </Field>
-                      <Field label="Год">
-                        <select
-                          value={historyYear}
-                          onChange={(e) => setHistoryYear(Number(e.target.value))}
-                          className={inputCls}
-                        >
-                          {years.map((y) => <option key={y} value={y}>{y}</option>)}
-                        </select>
-                      </Field>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleSaveToHistory}
-                      disabled={!hasPaymentToSave}
-                      className="rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                    >
-                      Сохранить оплату за {MONTHS_RU[historyMonth].toLowerCase()}
-                    </button>
-                  </div>
-                  <p className="mt-2 text-xs text-slate-500">
-                    Можно сохранять несколько оплат за один месяц. Частичные суммы будут суммироваться в карточках и на дашборде.
-                  </p>
-                  {savedPeriod && (
-                    <div className="mt-3 flex items-center gap-1.5 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-700">
-                      <CheckCircle2 size={13} />
-                      Оплата за {formatPeriod(savedPeriod)} сохранена в историю
-                    </div>
-                  )}
+              {savedPaymentMessage && (
+                <div className="flex items-center gap-1.5 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-700">
+                  <CheckCircle2 size={13} />
+                  {savedPaymentMessage}
                 </div>
               )}
             </div>

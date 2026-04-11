@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Category, Notification } from '../types';
+import { Category } from '../types';
 import {
   Plus,
   Archive,
-  Bell,
   Settings,
   ChevronRight,
   Trash2,
@@ -34,7 +33,6 @@ interface SidebarProps {
   categories: Category[];
   activeCategoryId: string | null;
   activeView: string;
-  notifications: Notification[];
   objectCounts: Record<string, number>;
   onSelectCategory: (id: string) => void;
   onSelectView: (view: string) => void;
@@ -50,7 +48,6 @@ export default function Sidebar({
   categories,
   activeCategoryId,
   activeView,
-  notifications,
   objectCounts,
   onSelectCategory,
   onSelectView,
@@ -237,12 +234,6 @@ export default function Sidebar({
       id: 'dashboard',
       label: 'Дашборд',
       icon: <BarChart2 size={18} />,
-    },
-    {
-      id: 'notifications',
-      label: 'Уведомления',
-      icon: <Bell size={18} />,
-      badge: notifications.length,
     },
     {
       id: 'archive',
@@ -626,18 +617,13 @@ export default function Sidebar({
   );
 }
 
-export function MobileMenuButton({ onClick, notifCount }: { onClick: () => void; notifCount: number }) {
+export function MobileMenuButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
       className="lg:hidden fixed top-4 left-4 z-10 bg-white shadow-md rounded-xl p-2.5 border border-slate-200"
     >
       <Menu size={22} className="text-slate-700" />
-      {notifCount > 0 && (
-        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
-          {notifCount}
-        </span>
-      )}
     </button>
   );
 }

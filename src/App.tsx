@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useAppState } from './hooks/useAppState';
-import { getUpcomingNotifications } from './utils/notifications';
 import { RealEstateObject } from './types';
 import { getCurrentPeriod } from './store/storage';
 import { normalizePeriodSelection, type PeriodSelection } from './utils/payments';
@@ -9,12 +8,11 @@ import Sidebar, { MobileMenuButton } from './components/Sidebar';
 import ObjectCard from './components/ObjectCard';
 import ObjectModal from './components/ObjectModal';
 import Dashboard from './components/Dashboard';
-import NotificationsView from './components/NotificationsView';
 import SettingsView from './components/SettingsView';
 import LoginScreen from './components/LoginScreen';
 import { Plus, Search, X } from 'lucide-react';
 
-type ActiveView = 'dashboard' | 'category' | 'notifications' | 'archive' | 'settings';
+type ActiveView = 'dashboard' | 'category' | 'archive' | 'settings';
 
 export default function App() {
   const {
@@ -59,11 +57,6 @@ export default function App() {
   });
 
   // ─── Derived state (все useMemo до любых early return) ───────────────────
-  const notifications = useMemo(
-    () => getUpcomingNotifications(state.objects, state.categories, state.notificationDaysBefore),
-    [state.objects, state.categories, state.notificationDaysBefore]
-  );
-
   const categoryObjects = useMemo(() => {
     let objs = state.objects.filter(
       (o) => !o.isArchived && o.categoryId === state.activeCategoryId
@@ -116,7 +109,6 @@ export default function App() {
   const pageTitle = useMemo(() => {
     switch (activeView) {
       case 'dashboard': return 'Дашборд';
-      case 'notifications': return 'Уведомления';
       case 'archive': return 'Архив';
       case 'settings': return 'Настройки';
       case 'category': return activeCategory?.name ?? 'Объекты';
@@ -211,7 +203,6 @@ export default function App() {
         categories={state.categories}
         activeCategoryId={state.activeCategoryId}
         activeView={activeView}
-        notifications={notifications}
         objectCounts={objectCounts}
         onSelectCategory={handleSelectCategory}
         onSelectView={handleSelectView}
@@ -224,10 +215,7 @@ export default function App() {
       />
 
       {/* Mobile menu button */}
-      <MobileMenuButton
-        onClick={() => setIsMobileOpen(true)}
-        notifCount={notifications.length}
-      />
+      <MobileMenuButton onClick={() => setIsMobileOpen(true)} />
 
       {/* Main Content */}
       <main className="flex-1 min-w-0 flex flex-col">
@@ -445,18 +433,6 @@ export default function App() {
                 </div>
               )}
             </>
-          )}
-
-          {/* Notifications */}
-          {activeView === 'notifications' && (
-            <NotificationsView
-              notifications={notifications}
-              allObjects={state.objects}
-              categories={state.categories}
-              notificationDaysBefore={state.notificationDaysBefore}
-              onChangeNotificationDays={setNotificationDays}
-              onObjectClick={(id) => handleOpenObject(id)}
-            />
           )}
 
           {/* Settings */}
