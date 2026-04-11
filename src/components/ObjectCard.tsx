@@ -1,5 +1,6 @@
 import { RealEstateObject, Category } from '../types';
-import { formatCurrency, formatDate } from '../utils/notifications';
+import { formatCurrency, formatDate, formatPeriod } from '../utils/notifications';
+import { getPaymentSnapshotForPeriod } from '../utils/payments';
 import {
   Phone,
   Send,
@@ -20,6 +21,7 @@ import {
 interface ObjectCardProps {
   obj: RealEstateObject;
   category: Category | undefined;
+  selectedPeriod: string;
   onClick: () => void;
   onArchive: () => void;
   onRestore: () => void;
@@ -74,6 +76,13 @@ function getPaymentStatus(planned: number, actual: number): {
   color: string;
   icon: React.ReactNode;
 } {
+  if (planned === 0 && actual === 0) {
+    return {
+      label: 'Нет данных',
+      color: 'text-slate-500 bg-slate-100',
+      icon: <Clock size={13} />,
+    };
+  }
   if (actual === 0 && planned > 0) {
     return {
       label: 'Не оплачено',
@@ -105,6 +114,7 @@ function getPaymentStatus(planned: number, actual: number): {
 export default function ObjectCard({
   obj,
   category,
+  selectedPeriod,
   onClick,
   onArchive,
   onRestore,
@@ -112,14 +122,15 @@ export default function ObjectCard({
 }: ObjectCardProps) {
   const colors = CATEGORY_COLORS[category?.color ?? 'blue'] ?? CATEGORY_COLORS.blue;
   const isParking = category?.id === 'parking';
+  const payment = getPaymentSnapshotForPeriod(obj, selectedPeriod);
 
-  const totalPlanned = isParking ? obj.plannedRent : obj.plannedRent + obj.plannedUtilities;
+  const totalPlanned = isParking ? payment.plannedRent : payment.plannedRent + payment.plannedUtilities;
   const totalActual = isParking
-    ? obj.currentPayment.actualRent
-    : obj.currentPayment.actualRent + obj.currentPayment.actualUtilities;
+    ? payment.actualRent
+    : payment.actualRent + payment.actualUtilities;
 
-  const rentStatus = getPaymentStatus(obj.plannedRent, obj.currentPayment.actualRent);
-  const utilStatus = getPaymentStatus(obj.plannedUtilities, obj.currentPayment.actualUtilities);
+  const rentStatus = getPaymentStatus(payment.plannedRent, payment.actualRent);
+  const utilStatus = getPaymentStatus(payment.plannedUtilities, payment.actualUtilities);
 
   return (
     <div
@@ -197,12 +208,19 @@ export default function ObjectCard({
           <span className="text-xs text-slate-500">Договор: {formatDate(obj.contractDate)}</span>
         </div>
 
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-medium text-slate-600">Период: {formatPeriod(selectedPeriod)}</span>
+          <span className="text-slate-400">
+            {payment.source === 'history' ? 'Из истории' : payment.source === 'current' ? 'Текущий расчёт' : 'Нет данных'}
+          </span>
+        </div>
+
         {/* Payment Summary */}
         <div className="bg-slate-50 rounded-xl p-3 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500">Аренда</span>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-700">{formatCurrency(obj.currentPayment.actualRent)} / {formatCurrency(obj.plannedRent)}</span>
+              <span className="text-xs font-semibold text-slate-700">{formatCurrency(payment.actualRent)} / {formatCurrency(payment.plannedRent)}</span>
               <span className={`inline-flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded-full ${rentStatus.color}`}>
                 {rentStatus.icon}
                 {rentStatus.label}
@@ -213,7 +231,7 @@ export default function ObjectCard({
             <div className="flex items-center justify-between">
               <span className="text-xs text-slate-500">Коммунальные</span>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-700">{formatCurrency(obj.currentPayment.actualUtilities)} / {formatCurrency(obj.plannedUtilities)}</span>
+                <span className="text-xs font-semibold text-slate-700">{formatCurrency(payment.actualUtilities)} / {formatCurrency(payment.plannedUtilities)}</span>
                 <span className={`inline-flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded-full ${utilStatus.color}`}>
                   {utilStatus.icon}
                   {utilStatus.label}

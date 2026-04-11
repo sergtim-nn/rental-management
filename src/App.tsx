@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useAppState } from './hooks/useAppState';
 import { getUpcomingNotifications } from './utils/notifications';
 import { RealEstateObject } from './types';
+import { getCurrentPeriod } from './store/storage';
 
 import Sidebar, { MobileMenuButton } from './components/Sidebar';
 import ObjectCard from './components/ObjectCard';
@@ -44,6 +45,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [modalObjectId, setModalObjectId] = useState<string | null>(null);
   const [isModalNew, setIsModalNew] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState(getCurrentPeriod());
 
   // ─── Derived state (все useMemo до любых early return) ───────────────────
   const notifications = useMemo(
@@ -181,6 +183,7 @@ export default function App() {
   };
 
   const showSearchAndAdd = activeView === 'category' || activeView === 'archive';
+  const showPeriodSelector = activeView === 'dashboard' || activeView === 'category' || activeView === 'archive';
 
   return (
     <div className="min-h-screen bg-slate-100 flex">
@@ -251,6 +254,18 @@ export default function App() {
               </div>
             )}
 
+            {showPeriodSelector && (
+              <div className={`${showSearchAndAdd ? '' : 'ml-auto'} flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2`}>
+                <span className="text-xs font-medium text-slate-500">Период</span>
+                <input
+                  type="month"
+                  value={selectedPeriod}
+                  onChange={(e) => setSelectedPeriod(e.target.value)}
+                  className="bg-transparent text-sm font-medium text-slate-700 focus:outline-none"
+                />
+              </div>
+            )}
+
             {/* Add button */}
             {activeView === 'category' && (
               <button
@@ -272,6 +287,7 @@ export default function App() {
             <Dashboard
               objects={state.objects}
               categories={state.categories}
+              selectedPeriod={selectedPeriod}
               onSelectCategory={handleSelectCategory}
             />
           )}
@@ -307,6 +323,7 @@ export default function App() {
                       key={obj.id}
                       obj={obj}
                       category={state.categories.find((c) => c.id === obj.categoryId)}
+                      selectedPeriod={selectedPeriod}
                       onClick={() => handleOpenObject(obj.id)}
                       onArchive={() => archiveObject(obj.id)}
                       onRestore={() => restoreObject(obj.id)}
@@ -342,6 +359,7 @@ export default function App() {
                       key={obj.id}
                       obj={obj}
                       category={state.categories.find((c) => c.id === obj.categoryId)}
+                      selectedPeriod={selectedPeriod}
                       onClick={() => handleOpenObject(obj.id)}
                       onArchive={() => archiveObject(obj.id)}
                       onRestore={() => restoreObject(obj.id)}

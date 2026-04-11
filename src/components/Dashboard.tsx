@@ -1,5 +1,6 @@
 import { RealEstateObject, Category } from '../types';
-import { formatCurrency } from '../utils/notifications';
+import { formatCurrency, formatPeriod } from '../utils/notifications';
+import { getPaymentSnapshotForPeriod } from '../utils/payments';
 import {
   TrendingUp,
   Home,
@@ -13,35 +14,43 @@ import {
 interface DashboardProps {
   objects: RealEstateObject[];
   categories: Category[];
+  selectedPeriod: string;
   onSelectCategory: (id: string) => void;
 }
 
-export default function Dashboard({ objects, categories, onSelectCategory }: DashboardProps) {
+export default function Dashboard({ objects, categories, selectedPeriod, onSelectCategory }: DashboardProps) {
   const activeObjects = objects.filter((o) => !o.isArchived);
   const archivedObjects = objects.filter((o) => o.isArchived);
+  const objectSnapshots = activeObjects.map((obj) => ({
+    obj,
+    payment: getPaymentSnapshotForPeriod(obj, selectedPeriod),
+  }));
 
-  const totalPlannedRent = activeObjects.reduce((s, o) => s + o.plannedRent, 0);
-  const totalPlannedUtils = activeObjects.reduce((s, o) => s + o.plannedUtilities, 0);
-  const totalActualRent = activeObjects.reduce((s, o) => s + o.currentPayment.actualRent, 0);
-  const totalActualUtils = activeObjects.reduce((s, o) => s + o.currentPayment.actualUtilities, 0);
+  const totalPlannedRent = objectSnapshots.reduce((s, item) => s + item.payment.plannedRent, 0);
+  const totalPlannedUtils = objectSnapshots.reduce((s, item) => s + item.payment.plannedUtilities, 0);
+  const totalActualRent = objectSnapshots.reduce((s, item) => s + item.payment.actualRent, 0);
+  const totalActualUtils = objectSnapshots.reduce((s, item) => s + item.payment.actualUtilities, 0);
   const totalPlanned = totalPlannedRent + totalPlannedUtils;
   const totalActual = totalActualRent + totalActualUtils;
   const diff = totalActual - totalPlanned;
 
-  const paid = activeObjects.filter(
-    (o) =>
-      o.currentPayment.actualRent >= o.plannedRent &&
-      o.currentPayment.actualUtilities >= o.plannedUtilities &&
-      o.plannedRent > 0
+  const paid = objectSnapshots.filter(
+    ({ payment }) =>
+      payment.hasData &&
+      payment.actualRent >= payment.plannedRent &&
+      payment.actualUtilities >= payment.plannedUtilities &&
+      payment.plannedRent > 0
   ).length;
-  const unpaid = activeObjects.filter(
-    (o) => o.currentPayment.actualRent === 0 && o.plannedRent > 0
+  const unpaid = objectSnapshots.filter(
+    ({ payment }) => payment.hasData && payment.actualRent === 0 && payment.plannedRent > 0
   ).length;
-  const partial = activeObjects.filter(
-    (o) =>
-      o.currentPayment.actualRent > 0 &&
-      o.currentPayment.actualRent < o.plannedRent
+  const partial = objectSnapshots.filter(
+    ({ payment }) =>
+      payment.hasData &&
+      payment.actualRent > 0 &&
+      payment.actualRent < payment.plannedRent
   ).length;
+  const noData = objectSnapshots.filter(({ payment }) => !payment.hasData).length;
 
   const statCards = [
     {
@@ -97,8 +106,9 @@ export default function Dashboard({ objects, categories, onSelectCategory }: Das
 
       {/* Payment Status */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-        <h3 className="font-semibold text-slate-700 mb-4">Статус оплат (текущий период)</h3>
-        <div className="grid grid-cols-3 gap-4">
+        <h3 className="font-semibold text-slate-700 mb-1">Статус оплат</h3>
+        <p className="text-sm text-slate-500 mb-4">Период: {formatPeriod(selectedPeriod)}</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="text-center">
             <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-2">
               <CheckCircle2 size={24} className="text-green-500" />
@@ -119,6 +129,13 @@ export default function Dashboard({ objects, categories, onSelectCategory }: Das
             </div>
             <p className="text-2xl font-bold text-red-500">{unpaid}</p>
             <p className="text-xs text-slate-500">Не оплачено</p>
+          </div>
+          <div className="text-center">
+            <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-2">
+              <Clock size={24} className="text-slate-500" />
+            </div>
+            <p className="text-2xl font-bold text-slate-600">{noData}</p>
+            <p className="text-xs text-slate-500">Нет данных</p>
           </div>
         </div>
 
@@ -150,11 +167,9 @@ export default function Dashboard({ objects, categories, onSelectCategory }: Das
           {categories.map((cat) => {
             const catObjects = activeObjects.filter((o) => o.categoryId === cat.id);
             if (catObjects.length === 0) return null;
-            const catPlanned = catObjects.reduce((s, o) => s + o.plannedRent + o.plannedUtilities, 0);
-            const catActual = catObjects.reduce(
-              (s, o) => s + o.currentPayment.actualRent + o.currentPayment.actualUtilities,
-              0
-            );
+            const catSnapshots = catObjects.map((obj) => getPaymentSnapshotForPeriod(obj, selectedPeriod));
+            const catPlanned = catSnapshots.reduce((s, payment) => s + payment.plannedRent + payment.plannedUtilities, 0);
+            const catActual = catSnapshots.reduce((s, payment) => s + payment.actualRent + payment.actualUtilities, 0);
             const pct = catPlanned > 0 ? (catActual / catPlanned) * 100 : 0;
 
             const barColors: Record<string, string> = {
