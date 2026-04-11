@@ -1,13 +1,14 @@
 import { AppState } from '../types';
-import { Download, Upload, Trash2, Info } from 'lucide-react';
+import { Download, Upload, Trash2, Info, LogOut } from 'lucide-react';
 
 interface SettingsViewProps {
   state: AppState;
-  onImport: (state: AppState) => void;
-  onReset: () => void;
+  onImport: (state: AppState) => Promise<void>;
+  onReset: () => Promise<void>;
+  onLogout: () => void;
 }
 
-export default function SettingsView({ state, onImport, onReset }: SettingsViewProps) {
+export default function SettingsView({ state, onImport, onReset, onLogout }: SettingsViewProps) {
   const handleExport = () => {
     const json = JSON.stringify(state, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
@@ -27,10 +28,10 @@ export default function SettingsView({ state, onImport, onReset }: SettingsViewP
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (ev) => {
+      reader.onload = async (ev) => {
         try {
           const parsed = JSON.parse(ev.target?.result as string) as AppState;
-          onImport(parsed);
+          await onImport(parsed);
           alert('Данные успешно импортированы!');
         } catch {
           alert('Ошибка при импорте файла. Проверьте формат.');
@@ -41,9 +42,9 @@ export default function SettingsView({ state, onImport, onReset }: SettingsViewP
     input.click();
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (window.confirm('Удалить ВСЕ данные? Это действие нельзя отменить.')) {
-      onReset();
+      await onReset();
     }
   };
 
@@ -114,10 +115,22 @@ export default function SettingsView({ state, onImport, onReset }: SettingsViewP
         </button>
       </div>
 
+      {/* Logout */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+        <h3 className="font-semibold text-slate-700 mb-3">Сессия</h3>
+        <button
+          onClick={onLogout}
+          className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors"
+        >
+          <LogOut size={16} />
+          Выйти из системы
+        </button>
+      </div>
+
       {/* About */}
       <div className="text-center text-xs text-slate-400 pb-4">
-        <p>РентаМенеджер v1.0</p>
-        <p className="mt-1">Данные хранятся локально в браузере (localStorage)</p>
+        <p>РентаМенеджер v2.0</p>
+        <p className="mt-1">Данные хранятся на сервере</p>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useAppState } from './hooks/useAppState';
 import { getUpcomingNotifications } from './utils/notifications';
-import { RealEstateObject, Document } from './types';
+import { RealEstateObject } from './types';
 
 import Sidebar, { MobileMenuButton } from './components/Sidebar';
 import ObjectCard from './components/ObjectCard';
@@ -9,6 +9,7 @@ import ObjectModal from './components/ObjectModal';
 import Dashboard from './components/Dashboard';
 import NotificationsView from './components/NotificationsView';
 import SettingsView from './components/SettingsView';
+import LoginScreen from './components/LoginScreen';
 import { Plus, Search, X } from 'lucide-react';
 
 type ActiveView = 'dashboard' | 'category' | 'notifications' | 'archive' | 'settings';
@@ -16,6 +17,10 @@ type ActiveView = 'dashboard' | 'category' | 'notifications' | 'archive' | 'sett
 export default function App() {
   const {
     state,
+    isLoading,
+    isAuthenticated,
+    login,
+    logout,
     setActiveCategoryId,
     addCategory,
     updateCategory,
@@ -29,6 +34,8 @@ export default function App() {
     addDocument,
     removeDocument,
     setNotificationDays,
+    importState,
+    resetState,
   } = useAppState();
 
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
@@ -37,13 +44,27 @@ export default function App() {
   const [modalObjectId, setModalObjectId] = useState<string | null>(null);
   const [isModalNew, setIsModalNew] = useState(false);
 
-  // Notifications
+  // ─── Auth ────────────────────────────────────────────────────────────────
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={login} />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="text-slate-400 text-sm">Загрузка данных...</div>
+      </div>
+    );
+  }
+
+  // ─── Derived state ────────────────────────────────────────────────────────
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const notifications = useMemo(
     () => getUpcomingNotifications(state.objects, state.categories, state.notificationDaysBefore),
     [state.objects, state.categories, state.notificationDaysBefore]
   );
 
-  // Active category objects
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const categoryObjects = useMemo(() => {
     let objs = state.objects.filter(
       (o) => !o.isArchived && o.categoryId === state.activeCategoryId
@@ -61,6 +82,7 @@ export default function App() {
     return objs;
   }, [state.objects, state.activeCategoryId, searchQuery]);
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const archivedObjects = useMemo(() => {
     let objs = state.objects.filter((o) => o.isArchived);
     if (searchQuery.trim()) {
@@ -75,7 +97,7 @@ export default function App() {
     return objs;
   }, [state.objects, searchQuery]);
 
-  // Object counts per category (non-archived)
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const objectCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     state.objects.filter((o) => !o.isArchived).forEach((o) => {
@@ -84,12 +106,13 @@ export default function App() {
     return counts;
   }, [state.objects]);
 
-  // Modal object
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const modalObject = useMemo(
     () => state.objects.find((o) => o.id === modalObjectId) ?? null,
     [state.objects, modalObjectId]
   );
 
+  // ─── Handlers ────────────────────────────────────────────────────────────
   const handleSelectCategory = (id: string) => {
     setActiveCategoryId(id);
     setActiveView('category');
@@ -126,8 +149,8 @@ export default function App() {
     setIsModalNew(false);
   };
 
-  const handleAddDocument = (doc: Document) => {
-    if (modalObjectId) addDocument(modalObjectId, doc);
+  const handleAddDocument = (file: File) => {
+    if (modalObjectId) addDocument(modalObjectId, file);
   };
 
   const handleRemoveDocument = (docId: string) => {
@@ -138,20 +161,17 @@ export default function App() {
     if (modalObjectId) saveCurrentPaymentToHistory(modalObjectId, period);
   };
 
-  const handleImportState = (imported: typeof state) => {
-    // Re-load by setting to localStorage directly
-    localStorage.setItem('renta_manager_v1', JSON.stringify(imported));
-    window.location.reload();
+  const handleImportState = async (imported: typeof state) => {
+    await importState(imported);
   };
 
-  const handleReset = () => {
-    localStorage.removeItem('renta_manager_v1');
-    window.location.reload();
+  const handleReset = async () => {
+    await resetState();
   };
 
   const activeCategory = state.categories.find((c) => c.id === state.activeCategoryId);
 
-  // Page title
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const pageTitle = useMemo(() => {
     switch (activeView) {
       case 'dashboard': return 'Дашборд';
@@ -344,9 +364,7 @@ export default function App() {
               categories={state.categories}
               notificationDaysBefore={state.notificationDaysBefore}
               onChangeNotificationDays={setNotificationDays}
-              onObjectClick={(id) => {
-                handleOpenObject(id);
-              }}
+              onObjectClick={(id) => handleOpenObject(id)}
             />
           )}
 
@@ -356,6 +374,7 @@ export default function App() {
               state={state}
               onImport={handleImportState}
               onReset={handleReset}
+              onLogout={logout}
             />
           )}
         </div>

@@ -2,8 +2,8 @@ export type PaymentType = 'cash' | 'card';
 
 export interface PaymentRecord {
   id: string;
-  date: string; // ISO date
-  period: string; // "YYYY-MM"
+  date: string;
+  period: string;
   plannedRent: number;
   actualRent: number;
   rentPaymentDate: string;
@@ -20,33 +20,36 @@ export interface Document {
   name: string;
   size: number;
   type: string;
-  url?: string;      // URL для скачивания с сервера
-  dataUrl?: string;  // base64 — только при импорте старых бэкапов
+  url?: string;
+  dataUrl?: string; // only present in data imported from localStorage backups
   uploadedAt: string;
+}
+
+export interface CurrentPayment {
+  date: string;
+  actualRent: number;
+  rentPaymentDate: string;
+  rentPaymentType: PaymentType;
+  actualUtilities: number;
+  utilitiesPaymentDate: string;
+  utilitiesPaymentType: PaymentType;
+  note?: string;
 }
 
 export interface RealEstateObject {
   id: string;
   categoryId: string;
-  // Адрес
   street: string;
   building: string;
-  // Арендатор
   tenantName: string;
   tenantPhone: string;
   tenantTelegram: string;
-  // Договор
   contractDate: string;
-  // Текущие плановые суммы
   plannedRent: number;
   plannedUtilities: number;
-  // Текущий период (активный платёж)
-  currentPayment: Omit<PaymentRecord, 'id' | 'period' | 'plannedRent' | 'plannedUtilities'>;
-  // История платежей
+  currentPayment: CurrentPayment;
   paymentHistory: PaymentRecord[];
-  // Документы
   documents: Document[];
-  // Статус
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -55,8 +58,8 @@ export interface RealEstateObject {
 export interface Category {
   id: string;
   name: string;
-  icon: string; // emoji
-  color: string; // tailwind color class
+  icon: string;
+  color: string;
   isDefault: boolean;
   order: number;
 }
@@ -66,14 +69,4 @@ export interface AppState {
   objects: RealEstateObject[];
   activeCategoryId: string | null;
   notificationDaysBefore: number;
-}
-
-export interface Notification {
-  objectId: string;
-  objectAddress: string;
-  categoryName: string;
-  tenantName: string;
-  dueDate: string;
-  daysLeft: number;
-  type: 'rent' | 'utilities';
 }

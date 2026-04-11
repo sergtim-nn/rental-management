@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { RealEstateObject, Category, Document, PaymentRecord } from '../types';
 import { formatCurrency, formatDate, formatPeriod } from '../utils/notifications';
-import { generateId, emptyCurrentPayment } from '../store/storage';
+import { emptyCurrentPayment } from '../store/storage';
+import { api } from '../api/client';
 import {
   X,
   Save,
@@ -29,7 +30,7 @@ interface ObjectModalProps {
   defaultCategoryId: string;
   onSave: (data: Partial<RealEstateObject>) => void;
   onClose: () => void;
-  onAddDocument: (doc: Document) => void;
+  onAddDocument: (file: File) => void;
   onRemoveDocument: (docId: string) => void;
   onSaveToHistory: (period: string) => void;
 }
@@ -207,30 +208,24 @@ export default function ObjectModal({
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const dataUrl = ev.target?.result as string;
-        const doc: Document = {
-          id: generateId(),
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          dataUrl,
-          uploadedAt: new Date().toISOString(),
-        };
-        onAddDocument(doc);
-      };
-      reader.readAsDataURL(file);
-    });
+    Array.from(files).forEach((file) => onAddDocument(file));
     e.target.value = '';
   };
 
-  const handleDownload = (doc: Document) => {
-    const a = window.document.createElement('a');
-    a.href = doc.dataUrl;
-    a.download = doc.name;
-    a.click();
+  const handleDownload = async (doc: Document) => {
+    const url = doc.url;
+    if (!url) return;
+    try {
+      const blob = await api.downloadDocument(url);
+      const objectUrl = URL.createObjectURL(blob);
+      const a = window.document.createElement('a');
+      a.href = objectUrl;
+      a.download = doc.name;
+      a.click();
+      URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      console.error('Download failed:', err);
+    }
   };
 
   const totalPlanned = isParking ? plannedRent : plannedRent + plannedUtilities;
