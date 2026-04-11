@@ -76,6 +76,10 @@ export default function Sidebar({
   const [openActionsId, setOpenActionsId] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
   const [busyCategoryAction, setBusyCategoryAction] = useState<string | null>(null);
+  const [deleteBlockedCategory, setDeleteBlockedCategory] = useState<{
+    name: string;
+    activeObjects: number;
+  } | null>(null);
 
   const resetAddForm = () => {
     setNewName('');
@@ -139,6 +143,19 @@ export default function Sidebar({
   };
 
   const handleDeleteCategory = async (id: string) => {
+    const activeObjects = objectCounts[id] ?? 0;
+    const category = categories.find((item) => item.id === id);
+
+    if (activeObjects > 0) {
+      setDeleteBlockedCategory({
+        name: category?.name ?? 'категория',
+        activeObjects,
+      });
+      setOpenActionsId(null);
+      setActionError('');
+      return;
+    }
+
     setBusyCategoryAction(id);
     setOpenActionsId(null);
     setActionError('');
@@ -221,6 +238,30 @@ export default function Sidebar({
           className="fixed inset-0 bg-black/40 z-20 lg:hidden"
           onClick={onCloseMobile}
         />
+      )}
+
+      {deleteBlockedCategory && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 p-5 space-y-4">
+            <div className="space-y-1">
+              <h3 className="text-lg font-semibold text-slate-900">Категорию нельзя удалить</h3>
+              <p className="text-sm text-slate-600">
+                В категории "{deleteBlockedCategory.name}" есть активные карточки объектов: {deleteBlockedCategory.activeObjects}.
+              </p>
+            </div>
+            <p className="text-sm text-slate-600">
+              Если нужно удалить категорию, сначала перенесите объекты в другую категорию или заархивируйте их.
+            </p>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setDeleteBlockedCategory(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-white text-sm font-medium hover:bg-slate-700 transition-colors"
+              >
+                Понятно
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <aside
