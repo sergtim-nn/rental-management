@@ -4,15 +4,16 @@ import { RealEstateObject } from './types';
 import { getCurrentPeriod } from './store/storage';
 import { normalizePeriodSelection, type PeriodSelection } from './utils/payments';
 
-import Sidebar, { MobileMenuButton } from './components/Sidebar';
+import Sidebar from './components/Sidebar';
 import ObjectCard from './components/ObjectCard';
 import ObjectModal from './components/ObjectModal';
 import Dashboard from './components/Dashboard';
 import SettingsView from './components/SettingsView';
 import LoginScreen from './components/LoginScreen';
-import { Plus, Search, X } from 'lucide-react';
+import MobileCategoriesScreen from './components/MobileCategoriesScreen';
+import { Plus, Search, X, ChevronLeft, BarChart2, Home, Archive, Settings } from 'lucide-react';
 
-type ActiveView = 'dashboard' | 'category' | 'archive' | 'settings';
+type ActiveView = 'dashboard' | 'categories' | 'category' | 'archive' | 'settings';
 
 export default function App() {
   const {
@@ -42,7 +43,6 @@ export default function App() {
   } = useAppState();
 
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [modalObjectId, setModalObjectId] = useState<string | null>(null);
   const [isModalNew, setIsModalNew] = useState(false);
@@ -108,10 +108,11 @@ export default function App() {
 
   const pageTitle = useMemo(() => {
     switch (activeView) {
-      case 'dashboard': return 'Дашборд';
-      case 'archive': return 'Архив';
-      case 'settings': return 'Настройки';
-      case 'category': return activeCategory?.name ?? 'Объекты';
+      case 'dashboard':  return 'Дашборд';
+      case 'categories': return 'Объекты';
+      case 'archive':    return 'Архив';
+      case 'settings':   return 'Настройки';
+      case 'category':   return activeCategory?.name ?? 'Объекты';
     }
   }, [activeView, activeCategory]);
 
@@ -193,12 +194,12 @@ export default function App() {
   };
 
   const showSearchAndAdd = activeView === 'category' || activeView === 'archive';
-  const showPeriodSelector = activeView === 'dashboard' || activeView === 'category' || activeView === 'archive';
+  const showPeriodSelector = activeView !== 'settings';
   const normalizedPeriodSelection = normalizePeriodSelection(periodSelection);
 
   return (
     <div className="min-h-screen flex" style={{ background: '#faf9f6' }}>
-      {/* Sidebar */}
+      {/* Sidebar — desktop only (hidden on mobile via CSS) */}
       <Sidebar
         categories={state.categories}
         activeCategoryId={state.activeCategoryId}
@@ -210,39 +211,150 @@ export default function App() {
         onUpdateCategory={updateCategory}
         onDeleteCategory={deleteCategory}
         onReorderCategory={reorderCategory}
-        isMobileOpen={isMobileOpen}
-        onCloseMobile={() => setIsMobileOpen(false)}
+        isMobileOpen={false}
+        onCloseMobile={() => {}}
       />
-
-      {/* Mobile menu button */}
-      <MobileMenuButton onClick={() => setIsMobileOpen(true)} />
 
       {/* Main Content */}
       <main className="flex-1 min-w-0 flex flex-col">
         {/* Top Bar */}
-        <div className="bg-white/80 backdrop-blur-md border-b border-[#ede9f4] px-4 sm:px-6 py-3.5 sticky top-0 z-10">
-          <div className="flex items-center gap-3 max-w-[1600px] mx-auto">
-            {/* Title */}
-            <div className="flex items-center gap-2 ml-12 lg:ml-0">
-              {activeView === 'category' && activeCategory && (
-                <span className="text-xl">{activeCategory.icon}</span>
-              )}
-              <h2 className="font-bold text-slate-800 text-lg">{pageTitle}</h2>
+        <div className="bg-white/80 backdrop-blur-md border-b border-[#ede9f4] sticky top-0 z-10">
+          {/* Main row */}
+          <div className="px-4 sm:px-6 py-3.5">
+            <div className="flex items-center gap-2 max-w-[1600px] mx-auto">
+
+              {/* Mobile back button in category view */}
               {activeView === 'category' && (
-                <span className="text-sm text-slate-400 font-normal">
-                  ({categoryObjects.length} объект{categoryObjects.length === 1 ? '' : categoryObjects.length < 5 ? 'а' : 'ов'})
-                </span>
+                <button
+                  onClick={() => { setActiveView('categories'); setSearchQuery(''); }}
+                  className="lg:hidden p-1.5 -ml-1 rounded-xl hover:bg-[#f0ebf8] text-[#967BB6] flex-shrink-0 transition-colors"
+                >
+                  <ChevronLeft size={22} />
+                </button>
               )}
-              {activeView === 'archive' && (
-                <span className="text-sm text-slate-400 font-normal">
-                  ({archivedObjects.length})
-                </span>
+
+              {/* Title */}
+              <div className="flex items-center gap-2 min-w-0">
+                {activeView === 'category' && activeCategory && (
+                  <span className="text-xl flex-shrink-0">{activeCategory.icon}</span>
+                )}
+                <h2 className="font-bold text-slate-800 text-lg truncate">{pageTitle}</h2>
+                {activeView === 'category' && (
+                  <span className="text-sm text-slate-400 font-normal flex-shrink-0">
+                    ({categoryObjects.length})
+                  </span>
+                )}
+                {activeView === 'archive' && (
+                  <span className="text-sm text-slate-400 font-normal flex-shrink-0">
+                    ({archivedObjects.length})
+                  </span>
+                )}
+              </div>
+
+              <div className="flex-1" />
+
+              {/* Desktop: search */}
+              {showSearchAndAdd && (
+                <div className="hidden lg:block w-64 relative flex-shrink-0">
+                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Поиск объектов..."
+                    className="w-full pl-9 pr-8 py-2 rounded-2xl border border-[#ede9f4] text-sm focus:outline-none focus:ring-2 focus:ring-[#967BB6]/40 bg-[#faf9f6] placeholder-slate-400"
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Mobile: compact month picker */}
+              {showPeriodSelector && (
+                <div className="lg:hidden flex items-center border border-[#ede9f4] bg-white rounded-xl px-2.5 py-1.5 flex-shrink-0">
+                  <input
+                    type="month"
+                    value={periodSelection.month}
+                    onChange={(e) => {
+                      const month = e.target.value;
+                      setPeriodSelection({ mode: 'month', month, from: month, to: month });
+                    }}
+                    className="bg-transparent text-sm font-medium text-slate-700 focus:outline-none"
+                  />
+                </div>
+              )}
+
+              {/* Desktop: full period selector */}
+              {showPeriodSelector && (
+                <div className="hidden lg:flex items-center gap-2 rounded-2xl border border-[#ede9f4] bg-white px-3 py-2 flex-shrink-0">
+                  <span className="text-xs font-medium text-slate-400">Период</span>
+                  <select
+                    value={periodSelection.mode}
+                    onChange={(e) => {
+                      const mode = e.target.value as PeriodSelection['mode'];
+                      setPeriodSelection((prev) => normalizePeriodSelection({ ...prev, mode }));
+                    }}
+                    className="bg-transparent text-sm font-medium text-slate-700 focus:outline-none"
+                  >
+                    <option value="month">Месяц</option>
+                    <option value="range">Несколько месяцев</option>
+                  </select>
+                  {periodSelection.mode === 'month' ? (
+                    <input
+                      type="month"
+                      value={periodSelection.month}
+                      onChange={(e) => {
+                        const month = e.target.value;
+                        setPeriodSelection({ mode: 'month', month, from: month, to: month });
+                      }}
+                      className="bg-transparent text-sm font-medium text-slate-700 focus:outline-none"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-500">с</span>
+                      <input
+                        type="month"
+                        value={normalizedPeriodSelection.from}
+                        onChange={(e) => {
+                          const from = e.target.value;
+                          setPeriodSelection((prev) => normalizePeriodSelection({ ...prev, mode: 'range', from }));
+                        }}
+                        className="bg-transparent text-sm font-medium text-slate-700 focus:outline-none"
+                      />
+                      <span className="text-xs text-slate-500">по</span>
+                      <input
+                        type="month"
+                        value={normalizedPeriodSelection.to}
+                        onChange={(e) => {
+                          const to = e.target.value;
+                          setPeriodSelection((prev) => normalizePeriodSelection({ ...prev, mode: 'range', to }));
+                        }}
+                        className="bg-transparent text-sm font-medium text-slate-700 focus:outline-none"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Add button */}
+              {activeView === 'category' && (
+                <button
+                  onClick={handleNewObject}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#967BB6] text-white text-sm font-semibold rounded-full hover:bg-[#6d548c] transition-colors flex-shrink-0 shadow-sm shadow-[#967BB6]/30"
+                >
+                  <Plus size={16} />
+                  <span className="hidden sm:inline">Добавить</span>
+                </button>
               )}
             </div>
+          </div>
 
-            {/* Search */}
-            {showSearchAndAdd && (
-              <div className="flex-1 max-w-xs ml-auto relative">
+          {/* Mobile: search bar below title row */}
+          {showSearchAndAdd && (
+            <div className="lg:hidden px-4 pb-3">
+              <div className="relative">
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   value={searchQuery}
@@ -251,98 +363,17 @@ export default function App() {
                   className="w-full pl-9 pr-8 py-2 rounded-2xl border border-[#ede9f4] text-sm focus:outline-none focus:ring-2 focus:ring-[#967BB6]/40 bg-[#faf9f6] placeholder-slate-400"
                 />
                 {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
+                  <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                     <X size={14} />
                   </button>
                 )}
               </div>
-            )}
-
-            {showPeriodSelector && (
-              <div className={`${showSearchAndAdd ? '' : 'ml-auto'} flex items-center gap-2 rounded-2xl border border-[#ede9f4] bg-white px-3 py-2`}>
-                <span className="text-xs font-medium text-slate-400">Период</span>
-                <select
-                  value={periodSelection.mode}
-                  onChange={(e) => {
-                    const mode = e.target.value as PeriodSelection['mode'];
-                    setPeriodSelection((prev) => normalizePeriodSelection({
-                      ...prev,
-                      mode,
-                    }));
-                  }}
-                  className="bg-transparent text-sm font-medium text-slate-700 focus:outline-none"
-                >
-                  <option value="month">Месяц</option>
-                  <option value="range">Несколько месяцев</option>
-                </select>
-                {periodSelection.mode === 'month' ? (
-                  <input
-                    type="month"
-                    value={periodSelection.month}
-                    onChange={(e) => {
-                      const month = e.target.value;
-                      setPeriodSelection({
-                        mode: 'month',
-                        month,
-                        from: month,
-                        to: month,
-                      });
-                    }}
-                    className="bg-transparent text-sm font-medium text-slate-700 focus:outline-none"
-                  />
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-500">с</span>
-                    <input
-                      type="month"
-                      value={normalizedPeriodSelection.from}
-                      onChange={(e) => {
-                        const from = e.target.value;
-                        setPeriodSelection((prev) => normalizePeriodSelection({
-                          ...prev,
-                          mode: 'range',
-                          from,
-                        }));
-                      }}
-                      className="bg-transparent text-sm font-medium text-slate-700 focus:outline-none"
-                    />
-                    <span className="text-xs text-slate-500">по</span>
-                    <input
-                      type="month"
-                      value={normalizedPeriodSelection.to}
-                      onChange={(e) => {
-                        const to = e.target.value;
-                        setPeriodSelection((prev) => normalizePeriodSelection({
-                          ...prev,
-                          mode: 'range',
-                          to,
-                        }));
-                      }}
-                      className="bg-transparent text-sm font-medium text-slate-700 focus:outline-none"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Add button */}
-            {activeView === 'category' && (
-              <button
-                onClick={handleNewObject}
-                className="flex items-center gap-2 px-4 py-2 bg-[#967BB6] text-white text-sm font-semibold rounded-full hover:bg-[#6d548c] transition-colors flex-shrink-0 shadow-sm shadow-[#967BB6]/30"
-              >
-                <Plus size={16} />
-                <span className="hidden sm:inline">Добавить</span>
-              </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 p-4 sm:p-5 max-w-[1600px] mx-auto w-full">
+        <div className="flex-1 p-4 sm:p-5 pb-24 lg:pb-5 max-w-[1600px] mx-auto w-full">
 
           {/* Dashboard */}
           {activeView === 'dashboard' && (
@@ -351,6 +382,21 @@ export default function App() {
               categories={state.categories}
               periodSelection={normalizedPeriodSelection}
               onSelectCategory={handleSelectCategory}
+            />
+          )}
+
+          {/* Mobile Categories Screen */}
+          {activeView === 'categories' && (
+            <MobileCategoriesScreen
+              categories={state.categories}
+              objects={state.objects}
+              objectCounts={objectCounts}
+              periodSelection={normalizedPeriodSelection}
+              onSelectCategory={handleSelectCategory}
+              onAddCategory={addCategory}
+              onUpdateCategory={updateCategory}
+              onDeleteCategory={deleteCategory}
+              onReorderCategory={reorderCategory}
             />
           )}
 
@@ -445,6 +491,34 @@ export default function App() {
             />
           )}
         </div>
+
+        {/* Mobile Bottom Navigation */}
+        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-20 bg-white border-t border-[#ede9f4]">
+          <div className="flex items-stretch">
+            {(
+              [
+                { id: 'dashboard',  label: 'Главная',   Icon: BarChart2 },
+                { id: 'categories', label: 'Объекты',   Icon: Home },
+                { id: 'archive',    label: 'Архив',     Icon: Archive },
+                { id: 'settings',   label: 'Настройки', Icon: Settings },
+              ] as const
+            ).map(({ id, label, Icon }) => {
+              const isActive = activeView === id || (id === 'categories' && activeView === 'category');
+              return (
+                <button
+                  key={id}
+                  onClick={() => { setActiveView(id); setSearchQuery(''); }}
+                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 px-1 transition-colors ${
+                    isActive ? 'text-[#967BB6]' : 'text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  <Icon size={22} strokeWidth={isActive ? 2.5 : 1.5} />
+                  <span className={`text-[10px] ${isActive ? 'font-semibold' : 'font-medium'}`}>{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
       </main>
 
       {/* Object Modal */}
