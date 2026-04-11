@@ -1,6 +1,10 @@
 import { RealEstateObject, Category } from '../types';
-import { formatCurrency, formatPeriod } from '../utils/notifications';
-import { getPaymentSnapshotForPeriod } from '../utils/payments';
+import { formatCurrency } from '../utils/notifications';
+import {
+  PeriodSelection,
+  formatSelectionLabel,
+  getPaymentSummaryForSelection,
+} from '../utils/payments';
 import {
   TrendingUp,
   Home,
@@ -14,16 +18,16 @@ import {
 interface DashboardProps {
   objects: RealEstateObject[];
   categories: Category[];
-  selectedPeriod: string;
+  periodSelection: PeriodSelection;
   onSelectCategory: (id: string) => void;
 }
 
-export default function Dashboard({ objects, categories, selectedPeriod, onSelectCategory }: DashboardProps) {
+export default function Dashboard({ objects, categories, periodSelection, onSelectCategory }: DashboardProps) {
   const activeObjects = objects.filter((o) => !o.isArchived);
   const archivedObjects = objects.filter((o) => o.isArchived);
   const objectSnapshots = activeObjects.map((obj) => ({
     obj,
-    payment: getPaymentSnapshotForPeriod(obj, selectedPeriod),
+    payment: getPaymentSummaryForSelection(obj, periodSelection),
   }));
 
   const totalPlannedRent = objectSnapshots.reduce((s, item) => s + item.payment.plannedRent, 0);
@@ -107,7 +111,7 @@ export default function Dashboard({ objects, categories, selectedPeriod, onSelec
       {/* Payment Status */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
         <h3 className="font-semibold text-slate-700 mb-1">Статус оплат</h3>
-        <p className="text-sm text-slate-500 mb-4">Период: {formatPeriod(selectedPeriod)}</p>
+        <p className="text-sm text-slate-500 mb-4">Период: {formatSelectionLabel(periodSelection)}</p>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="text-center">
             <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-2">
@@ -167,7 +171,7 @@ export default function Dashboard({ objects, categories, selectedPeriod, onSelec
           {categories.map((cat) => {
             const catObjects = activeObjects.filter((o) => o.categoryId === cat.id);
             if (catObjects.length === 0) return null;
-            const catSnapshots = catObjects.map((obj) => getPaymentSnapshotForPeriod(obj, selectedPeriod));
+            const catSnapshots = catObjects.map((obj) => getPaymentSummaryForSelection(obj, periodSelection));
             const catPlanned = catSnapshots.reduce((s, payment) => s + payment.plannedRent + payment.plannedUtilities, 0);
             const catActual = catSnapshots.reduce((s, payment) => s + payment.actualRent + payment.actualUtilities, 0);
             const pct = catPlanned > 0 ? (catActual / catPlanned) * 100 : 0;

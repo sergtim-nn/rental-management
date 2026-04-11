@@ -253,15 +253,23 @@ export function useAppState() {
   }, []);
 
   // ─── Payment History ──────────────────────────────────────────────────────
-  const saveCurrentPaymentToHistory = useCallback(async (objectId: string, period: string) => {
+  const saveCurrentPaymentToHistory = useCallback(async (
+    objectId: string,
+    period: string,
+    paymentDraft?: {
+      plannedRent: number;
+      plannedUtilities: number;
+      currentPayment: RealEstateObject['currentPayment'];
+    }
+  ) => {
     const obj = stateRef.current.objects.find((o) => o.id === objectId);
     if (!obj) return;
     const record: PaymentRecord = {
       id: generateId(),
       period,
-      plannedRent: obj.plannedRent,
-      plannedUtilities: obj.plannedUtilities,
-      ...obj.currentPayment,
+      plannedRent: paymentDraft?.plannedRent ?? obj.plannedRent,
+      plannedUtilities: paymentDraft?.plannedUtilities ?? obj.plannedUtilities,
+      ...(paymentDraft?.currentPayment ?? obj.currentPayment),
     };
     const saved = await api.createPayment(objectId, record).catch((err: Error) => {
       console.error('Failed to save payment to history:', err);

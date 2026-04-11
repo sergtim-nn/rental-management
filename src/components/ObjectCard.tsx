@@ -1,6 +1,10 @@
 import { RealEstateObject, Category } from '../types';
 import { formatCurrency, formatDate, formatPeriod } from '../utils/notifications';
-import { getPaymentSnapshotForPeriod } from '../utils/payments';
+import {
+  PeriodSelection,
+  formatSelectionLabel,
+  getPaymentSummaryForSelection,
+} from '../utils/payments';
 import {
   Phone,
   Send,
@@ -21,7 +25,7 @@ import {
 interface ObjectCardProps {
   obj: RealEstateObject;
   category: Category | undefined;
-  selectedPeriod: string;
+  periodSelection: PeriodSelection;
   onClick: () => void;
   onArchive: () => void;
   onRestore: () => void;
@@ -114,7 +118,7 @@ function getPaymentStatus(planned: number, actual: number): {
 export default function ObjectCard({
   obj,
   category,
-  selectedPeriod,
+  periodSelection,
   onClick,
   onArchive,
   onRestore,
@@ -122,7 +126,7 @@ export default function ObjectCard({
 }: ObjectCardProps) {
   const colors = CATEGORY_COLORS[category?.color ?? 'blue'] ?? CATEGORY_COLORS.blue;
   const isParking = category?.id === 'parking';
-  const payment = getPaymentSnapshotForPeriod(obj, selectedPeriod);
+  const payment = getPaymentSummaryForSelection(obj, periodSelection);
 
   const totalPlanned = isParking ? payment.plannedRent : payment.plannedRent + payment.plannedUtilities;
   const totalActual = isParking
@@ -208,12 +212,23 @@ export default function ObjectCard({
           <span className="text-xs text-slate-500">Договор: {formatDate(obj.contractDate)}</span>
         </div>
 
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-medium text-slate-600">Период: {formatPeriod(selectedPeriod)}</span>
+        <div className="flex items-center justify-between gap-3 text-xs">
+          <span className="font-medium text-slate-600">Период: {formatSelectionLabel(periodSelection)}</span>
           <span className="text-slate-400">
-            {payment.source === 'history' ? 'Из истории' : payment.source === 'current' ? 'Текущий расчёт' : 'Нет данных'}
+            {!payment.hasAnyData
+              ? 'Нет данных'
+              : payment.hasCurrentData && payment.hasHistoryData
+                ? 'История + текущий'
+                : payment.hasHistoryData
+                  ? 'Из истории'
+                  : 'Текущий расчёт'}
           </span>
         </div>
+        {periodSelection.mode === 'range' && payment.missingPeriods.length > 0 && (
+          <p className="text-xs text-amber-600">
+            Без данных за: {payment.missingPeriods.map((period) => formatPeriod(period)).join(', ')}
+          </p>
+        )}
 
         {/* Payment Summary */}
         <div className="bg-slate-50 rounded-xl p-3 space-y-2">

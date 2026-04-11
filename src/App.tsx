@@ -3,6 +3,7 @@ import { useAppState } from './hooks/useAppState';
 import { getUpcomingNotifications } from './utils/notifications';
 import { RealEstateObject } from './types';
 import { getCurrentPeriod } from './store/storage';
+import { normalizePeriodSelection, type PeriodSelection } from './utils/payments';
 
 import Sidebar, { MobileMenuButton } from './components/Sidebar';
 import ObjectCard from './components/ObjectCard';
@@ -45,7 +46,15 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [modalObjectId, setModalObjectId] = useState<string | null>(null);
   const [isModalNew, setIsModalNew] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState(getCurrentPeriod());
+  const [periodSelection, setPeriodSelection] = useState<PeriodSelection>(() => {
+    const currentPeriod = getCurrentPeriod();
+    return {
+      mode: 'month',
+      month: currentPeriod,
+      from: currentPeriod,
+      to: currentPeriod,
+    };
+  });
 
   // ─── Derived state (все useMemo до любых early return) ───────────────────
   const notifications = useMemo(
@@ -170,8 +179,15 @@ export default function App() {
     if (modalObjectId) removeDocument(modalObjectId, docId);
   };
 
-  const handleSaveToHistory = (period: string) => {
-    if (modalObjectId) saveCurrentPaymentToHistory(modalObjectId, period);
+  const handleSaveToHistory = (
+    period: string,
+    paymentDraft: {
+      plannedRent: number;
+      plannedUtilities: number;
+      currentPayment: RealEstateObject['currentPayment'];
+    }
+  ) => {
+    if (modalObjectId) saveCurrentPaymentToHistory(modalObjectId, period, paymentDraft);
   };
 
   const handleImportState = async (imported: typeof state) => {
@@ -184,6 +200,7 @@ export default function App() {
 
   const showSearchAndAdd = activeView === 'category' || activeView === 'archive';
   const showPeriodSelector = activeView === 'dashboard' || activeView === 'category' || activeView === 'archive';
+  const normalizedPeriodSelection = normalizePeriodSelection(periodSelection);
 
   return (
     <div className="min-h-screen bg-slate-100 flex">
@@ -257,12 +274,67 @@ export default function App() {
             {showPeriodSelector && (
               <div className={`${showSearchAndAdd ? '' : 'ml-auto'} flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2`}>
                 <span className="text-xs font-medium text-slate-500">Период</span>
-                <input
-                  type="month"
-                  value={selectedPeriod}
-                  onChange={(e) => setSelectedPeriod(e.target.value)}
+                <select
+                  value={periodSelection.mode}
+                  onChange={(e) => {
+                    const mode = e.target.value as PeriodSelection['mode'];
+                    setPeriodSelection((prev) => normalizePeriodSelection({
+                      ...prev,
+                      mode,
+                    }));
+                  }}
                   className="bg-transparent text-sm font-medium text-slate-700 focus:outline-none"
-                />
+                >
+                  <option value="month">Месяц</option>
+                  <option value="range">Несколько месяцев</option>
+                </select>
+                {periodSelection.mode === 'month' ? (
+                  <input
+                    type="month"
+                    value={periodSelection.month}
+                    onChange={(e) => {
+                      const month = e.target.value;
+                      setPeriodSelection({
+                        mode: 'month',
+                        month,
+                        from: month,
+                        to: month,
+                      });
+                    }}
+                    className="bg-transparent text-sm font-medium text-slate-700 focus:outline-none"
+                  />
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500">с</span>
+                    <input
+                      type="month"
+                      value={normalizedPeriodSelection.from}
+                      onChange={(e) => {
+                        const from = e.target.value;
+                        setPeriodSelection((prev) => normalizePeriodSelection({
+                          ...prev,
+                          mode: 'range',
+                          from,
+                        }));
+                      }}
+                      className="bg-transparent text-sm font-medium text-slate-700 focus:outline-none"
+                    />
+                    <span className="text-xs text-slate-500">по</span>
+                    <input
+                      type="month"
+                      value={normalizedPeriodSelection.to}
+                      onChange={(e) => {
+                        const to = e.target.value;
+                        setPeriodSelection((prev) => normalizePeriodSelection({
+                          ...prev,
+                          mode: 'range',
+                          to,
+                        }));
+                      }}
+                      className="bg-transparent text-sm font-medium text-slate-700 focus:outline-none"
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -287,7 +359,7 @@ export default function App() {
             <Dashboard
               objects={state.objects}
               categories={state.categories}
-              selectedPeriod={selectedPeriod}
+              periodSelection={normalizedPeriodSelection}
               onSelectCategory={handleSelectCategory}
             />
           )}
@@ -323,7 +395,7 @@ export default function App() {
                       key={obj.id}
                       obj={obj}
                       category={state.categories.find((c) => c.id === obj.categoryId)}
-                      selectedPeriod={selectedPeriod}
+                      periodSelection={normalizedPeriodSelection}
                       onClick={() => handleOpenObject(obj.id)}
                       onArchive={() => archiveObject(obj.id)}
                       onRestore={() => restoreObject(obj.id)}
@@ -359,7 +431,7 @@ export default function App() {
                       key={obj.id}
                       obj={obj}
                       category={state.categories.find((c) => c.id === obj.categoryId)}
-                      selectedPeriod={selectedPeriod}
+                      periodSelection={normalizedPeriodSelection}
                       onClick={() => handleOpenObject(obj.id)}
                       onArchive={() => archiveObject(obj.id)}
                       onRestore={() => restoreObject(obj.id)}

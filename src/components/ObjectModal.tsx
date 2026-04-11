@@ -32,7 +32,14 @@ interface ObjectModalProps {
   onClose: () => void;
   onAddDocument: (file: File) => void;
   onRemoveDocument: (docId: string) => void;
-  onSaveToHistory: (period: string) => void;
+  onSaveToHistory: (
+    period: string,
+    paymentDraft: {
+      plannedRent: number;
+      plannedUtilities: number;
+      currentPayment: RealEstateObject['currentPayment'];
+    }
+  ) => void;
 }
 
 const MONTHS_RU = [
@@ -194,7 +201,20 @@ export default function ObjectModal({
 
   const handleSaveToHistory = () => {
     const period = `${historyYear}-${String(historyMonth + 1).padStart(2, '0')}`;
-    onSaveToHistory(period);
+    onSaveToHistory(period, {
+      plannedRent,
+      plannedUtilities,
+      currentPayment: {
+        date: new Date().toISOString().split('T')[0],
+        actualRent,
+        rentPaymentDate,
+        rentPaymentType,
+        actualUtilities,
+        utilitiesPaymentDate,
+        utilitiesPaymentType,
+        note,
+      },
+    });
     setSavedPeriod(period);
     // reset current payment fields
     setActualRent(0);
