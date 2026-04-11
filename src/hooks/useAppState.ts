@@ -282,10 +282,11 @@ export function useAppState() {
         o.id === objectId
           ? {
               ...o,
-              paymentHistory: [
-                ...o.paymentHistory.filter((p) => p.period !== period),
-                saved,
-              ].sort((a, b) => b.period.localeCompare(a.period)),
+              paymentHistory: [...o.paymentHistory, saved].sort((a, b) => {
+                const periodCompare = b.period.localeCompare(a.period);
+                if (periodCompare !== 0) return periodCompare;
+                return b.date.localeCompare(a.date);
+              }),
               currentPayment: emptyCurrentPayment(),
               updatedAt: new Date().toISOString(),
             }
@@ -312,7 +313,11 @@ export function useAppState() {
               ...o,
               paymentHistory: o.paymentHistory
                 .map((p) => (p.id === recordId ? updated : p))
-                .sort((a, b) => b.period.localeCompare(a.period)),
+                .sort((a, b) => {
+                  const periodCompare = b.period.localeCompare(a.period);
+                  if (periodCompare !== 0) return periodCompare;
+                  return b.date.localeCompare(a.date);
+                }),
             }
           : o
       ),
@@ -327,7 +332,11 @@ export function useAppState() {
                 ...o,
                 paymentHistory: o.paymentHistory
                   .map((p) => (p.id === recordId ? record : p))
-                  .sort((a, b) => b.period.localeCompare(a.period)),
+                  .sort((a, b) => {
+                    const periodCompare = b.period.localeCompare(a.period);
+                    if (periodCompare !== 0) return periodCompare;
+                    return b.date.localeCompare(a.date);
+                  }),
               }
             : o
         ),
@@ -343,7 +352,11 @@ export function useAppState() {
               ...o,
               paymentHistory: o.paymentHistory
                 .map((p) => (p.id === recordId ? serverRecord : p))
-                .sort((a, b) => b.period.localeCompare(a.period)),
+                .sort((a, b) => {
+                  const periodCompare = b.period.localeCompare(a.period);
+                  if (periodCompare !== 0) return periodCompare;
+                  return b.date.localeCompare(a.date);
+                }),
             }
           : o
       ),

@@ -19,7 +19,6 @@ import {
   History,
   CreditCard,
   Banknote,
-  Plus,
   CheckCircle2,
 } from 'lucide-react';
 
@@ -258,6 +257,7 @@ export default function ObjectModal({
   const totalPlanned = isParking ? plannedRent : plannedRent + plannedUtilities;
   const totalActual = isParking ? actualRent : actualRent + actualUtilities;
   const diff = totalActual - totalPlanned;
+  const hasPaymentToSave = actualRent > 0 || actualUtilities > 0;
 
   const years = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
 
@@ -478,43 +478,47 @@ export default function ObjectModal({
                 />
               </Field>
 
-              {/* Save to history */}
               {!isNew && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                  <p className="text-xs font-semibold text-amber-800 mb-3 flex items-center gap-1.5">
-                    <History size={13} />
-                    Сохранить период в историю
-                  </p>
-                  <div className="flex items-center gap-2 mb-3">
-                    <select
-                      value={historyMonth}
-                      onChange={(e) => setHistoryMonth(Number(e.target.value))}
-                      className="flex-1 border border-amber-200 bg-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                    >
-                      {MONTHS_RU.map((m, i) => (
-                        <option key={i} value={i}>{m}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={historyYear}
-                      onChange={(e) => setHistoryYear(Number(e.target.value))}
-                      className="border border-amber-200 bg-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                    >
-                      {years.map((y) => <option key={y} value={y}>{y}</option>)}
-                    </select>
+                <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
+                      <Field label="Месяц оплаты для истории">
+                        <select
+                          value={historyMonth}
+                          onChange={(e) => setHistoryMonth(Number(e.target.value))}
+                          className={inputCls}
+                        >
+                          {MONTHS_RU.map((m, i) => (
+                            <option key={i} value={i}>{m}</option>
+                          ))}
+                        </select>
+                      </Field>
+                      <Field label="Год">
+                        <select
+                          value={historyYear}
+                          onChange={(e) => setHistoryYear(Number(e.target.value))}
+                          className={inputCls}
+                        >
+                          {years.map((y) => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                      </Field>
+                    </div>
                     <button
                       type="button"
                       onClick={handleSaveToHistory}
-                      className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+                      disabled={!hasPaymentToSave}
+                      className="rounded-xl bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                     >
-                      <Plus size={14} />
-                      Сохранить
+                      Сохранить оплату за {MONTHS_RU[historyMonth].toLowerCase()}
                     </button>
                   </div>
+                  <p className="mt-2 text-xs text-slate-500">
+                    Можно сохранять несколько оплат за один месяц. Частичные суммы будут суммироваться в карточках и на дашборде.
+                  </p>
                   {savedPeriod && (
-                    <div className="flex items-center gap-1.5 text-green-700 bg-green-50 rounded-lg px-3 py-2 text-xs font-medium">
+                    <div className="mt-3 flex items-center gap-1.5 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-700">
                       <CheckCircle2 size={13} />
-                      Период {formatPeriod(savedPeriod)} сохранён в историю
+                      Оплата за {formatPeriod(savedPeriod)} сохранена в историю
                     </div>
                   )}
                 </div>

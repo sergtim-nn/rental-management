@@ -213,14 +213,23 @@ export default function ObjectCard({
         </div>
 
         <div className="flex items-center justify-between gap-3 text-xs">
-          <span className="font-medium text-slate-600">Период: {formatSelectionLabel(periodSelection)}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-slate-600">Период: {formatSelectionLabel(periodSelection)}</span>
+            {payment.paymentCount > 0 && (
+              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-600">
+                {payment.paymentCount} {payment.paymentCount === 1 ? 'оплата' : payment.paymentCount < 5 ? 'оплаты' : 'оплат'}
+              </span>
+            )}
+          </div>
           <span className="text-slate-400">
             {!payment.hasAnyData
               ? 'Нет данных'
               : payment.hasCurrentData && payment.hasHistoryData
                 ? 'История + текущий'
                 : payment.hasHistoryData
-                  ? 'Из истории'
+                  ? payment.paymentCount > 1
+                    ? 'Несколько оплат'
+                    : 'Из истории'
                   : 'Текущий расчёт'}
           </span>
         </div>
