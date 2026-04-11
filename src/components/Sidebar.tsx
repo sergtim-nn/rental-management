@@ -322,7 +322,7 @@ export default function Sidebar({
         {/* Footer */}
         <div className="px-4 py-3 border-t border-slate-100">
           <p className="text-xs text-slate-400 text-center">
-            Данные хранятся локально
+            Данные хранятся на сервере
           </p>
         </div>
       </aside>
