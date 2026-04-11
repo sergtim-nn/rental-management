@@ -25,6 +25,7 @@ export default function App() {
     addCategory,
     updateCategory,
     deleteCategory,
+    reorderCategory,
     addObject,
     updateObject,
     archiveObject,
@@ -195,6 +196,7 @@ export default function App() {
         onAddCategory={addCategory}
         onUpdateCategory={updateCategory}
         onDeleteCategory={deleteCategory}
+        onReorderCategory={reorderCategory}
         isMobileOpen={isMobileOpen}
         onCloseMobile={() => setIsMobileOpen(false)}
       />

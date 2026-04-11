@@ -12,6 +12,9 @@ import {
   X,
   Menu,
   BarChart2,
+  MoreHorizontal,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 
 const COLOR_OPTIONS = [
@@ -35,9 +38,10 @@ interface SidebarProps {
   objectCounts: Record<string, number>;
   onSelectCategory: (id: string) => void;
   onSelectView: (view: string) => void;
-  onAddCategory: (name: string, icon: string, color: string) => void;
-  onUpdateCategory: (id: string, updates: Partial<Category>) => void;
-  onDeleteCategory: (id: string) => void;
+  onAddCategory: (name: string, icon: string, color: string) => Promise<string | null>;
+  onUpdateCategory: (id: string, updates: Partial<Category>) => Promise<boolean>;
+  onDeleteCategory: (id: string) => Promise<boolean>;
+  onReorderCategory: (id: string, direction: 'up' | 'down') => Promise<boolean>;
   isMobileOpen: boolean;
   onCloseMobile: () => void;
 }
@@ -53,6 +57,7 @@ export default function Sidebar({
   onAddCategory,
   onUpdateCategory,
   onDeleteCategory,
+  onReorderCategory,
   isMobileOpen,
   onCloseMobile,
 }: SidebarProps) {
@@ -62,24 +67,97 @@ export default function Sidebar({
   const [newColor, setNewColor] = useState('blue');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [editIcon, setEditIcon] = useState('📦');
+  const [editColor, setEditColor] = useState('blue');
+  const [editError, setEditError] = useState('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [addError, setAddError] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const [openActionsId, setOpenActionsId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState('');
+  const [busyCategoryAction, setBusyCategoryAction] = useState<string | null>(null);
 
-  const handleAdd = () => {
-    if (!newName.trim()) return;
-    onAddCategory(newName.trim(), newIcon, newColor);
+  const resetAddForm = () => {
     setNewName('');
     setNewIcon('📦');
     setNewColor('blue');
+    setAddError('');
+  };
+
+  const handleAdd = async () => {
+    const trimmedName = newName.trim();
+    if (!trimmedName || isAdding) return;
+
+    setIsAdding(true);
+    setAddError('');
+    const categoryId = await onAddCategory(trimmedName, newIcon, newColor);
+    setIsAdding(false);
+
+    if (!categoryId) {
+      setAddError('Не удалось создать категорию. Проверьте соединение и попробуйте снова.');
+      return;
+    }
+
+    resetAddForm();
     setShowAddForm(false);
   };
 
   const handleEditStart = (cat: Category) => {
     setEditingId(cat.id);
     setEditName(cat.name);
+    setEditIcon(cat.icon);
+    setEditColor(cat.color);
+    setEditError('');
+    setOpenActionsId(null);
+    setActionError('');
   };
 
-  const handleEditSave = (id: string) => {
-    if (editName.trim()) onUpdateCategory(id, { name: editName.trim() });
+  const handleEditSave = async (id: string) => {
+    const trimmedName = editName.trim();
+    if (!trimmedName || isSavingEdit) return;
+
+    setIsSavingEdit(true);
+    setEditError('');
+    const saved = await onUpdateCategory(id, {
+      name: trimmedName,
+      icon: editIcon,
+      color: editColor,
+    });
+    setIsSavingEdit(false);
+
+    if (!saved) {
+      setEditError('Не удалось сохранить категорию. Попробуйте ещё раз.');
+      return;
+    }
+
     setEditingId(null);
+  };
+
+  const handleAddFormClose = () => {
+    resetAddForm();
+    setShowAddForm(false);
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    setBusyCategoryAction(id);
+    setOpenActionsId(null);
+    setActionError('');
+    const deleted = await onDeleteCategory(id);
+    setBusyCategoryAction(null);
+    if (!deleted) {
+      setActionError('Не удалось удалить категорию. Убедитесь, что в ней нет объектов.');
+    }
+  };
+
+  const handleMoveCategory = async (id: string, direction: 'up' | 'down') => {
+    setBusyCategoryAction(id);
+    setOpenActionsId(null);
+    setActionError('');
+    const moved = await onReorderCategory(id, direction);
+    setBusyCategoryAction(null);
+    if (!moved) {
+      setActionError('Не удалось изменить порядок категорий. Попробуйте ещё раз.');
+    }
   };
 
   const getCategoryBgColor = (color: string, active: boolean) => {
@@ -198,29 +276,67 @@ export default function Sidebar({
 
         {/* Categories */}
         <div className="flex-1 overflow-y-auto px-3 space-y-1">
-          {categories.map((cat) => {
+          {categories.map((cat, index) => {
             const isActive = activeView === 'category' && activeCategoryId === cat.id;
             const count = objectCounts[cat.id] ?? 0;
+            const canMoveUp = index > 0;
+            const canMoveDown = index < categories.length - 1;
+            const isBusy = busyCategoryAction === cat.id;
             return (
               <div key={cat.id} className="group relative">
                 {editingId === cat.id ? (
-                  <div className="flex items-center gap-1 px-2 py-1.5">
+                  <div className="px-2 py-2 space-y-2">
                     <input
                       autoFocus
                       value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
+                      onChange={(e) => {
+                        setEditName(e.target.value);
+                        if (editError) setEditError('');
+                      }}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleEditSave(cat.id);
+                        if (e.key === 'Enter') void handleEditSave(cat.id);
                         if (e.key === 'Escape') setEditingId(null);
                       }}
-                      className="flex-1 text-sm border border-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      className="w-full text-sm border border-slate-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     />
-                    <button onClick={() => handleEditSave(cat.id)} className="text-green-600 hover:text-green-700">
-                      <Check size={14} />
-                    </button>
-                    <button onClick={() => setEditingId(null)} className="text-slate-400 hover:text-slate-600">
-                      <X size={14} />
-                    </button>
+                    <div className="flex flex-wrap gap-1.5">
+                      {ICON_OPTIONS.map((icon) => (
+                        <button
+                          key={icon}
+                          onClick={() => setEditIcon(icon)}
+                          disabled={isSavingEdit}
+                          className={`text-base w-8 h-8 rounded-lg flex items-center justify-center transition-all ${editIcon === icon ? 'bg-blue-100 ring-2 ring-blue-400' : 'hover:bg-slate-200'} disabled:opacity-60`}
+                        >
+                          {icon}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {COLOR_OPTIONS.map((c) => (
+                        <button
+                          key={c.value}
+                          onClick={() => setEditColor(c.value)}
+                          disabled={isSavingEdit}
+                          className={`w-6 h-6 rounded-full ${c.bg} transition-all ${editColor === c.value ? 'ring-2 ring-offset-1 ring-slate-400 scale-110' : 'hover:scale-105'} disabled:opacity-60`}
+                          title={c.label}
+                        />
+                      ))}
+                    </div>
+                    {editError && (
+                      <p className="text-xs text-red-600">{editError}</p>
+                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => void handleEditSave(cat.id)}
+                        disabled={isSavingEdit}
+                        className="text-green-600 hover:text-green-700 disabled:opacity-60"
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button onClick={() => setEditingId(null)} className="text-slate-400 hover:text-slate-600">
+                        <X size={14} />
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <button
@@ -240,31 +356,109 @@ export default function Sidebar({
 
                 {/* Edit/Delete actions */}
                 {!editingId && (
-                  <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5 bg-white rounded-lg shadow-sm border border-slate-100 p-0.5">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleEditStart(cat); }}
-                      className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-700"
-                    >
-                      <Edit2 size={12} />
-                    </button>
-                    {!cat.isDefault && (
+                  <>
+                    <div className="absolute right-1 top-1/2 -translate-y-1/2 hidden lg:group-hover:flex items-center gap-0.5 bg-white rounded-lg shadow-sm border border-slate-100 p-0.5">
                       <button
-                        onClick={(e) => { e.stopPropagation(); onDeleteCategory(cat.id); }}
-                        className="p-1 hover:bg-red-50 rounded text-slate-500 hover:text-red-600"
+                        onClick={(e) => { e.stopPropagation(); void handleMoveCategory(cat.id, 'up'); }}
+                        disabled={!canMoveUp || isBusy}
+                        className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-700 disabled:opacity-40 disabled:hover:bg-transparent"
+                      >
+                        <ChevronUp size={12} />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); void handleMoveCategory(cat.id, 'down'); }}
+                        disabled={!canMoveDown || isBusy}
+                        className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-700 disabled:opacity-40 disabled:hover:bg-transparent"
+                      >
+                        <ChevronDown size={12} />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleEditStart(cat); }}
+                        className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-700"
+                      >
+                        <Edit2 size={12} />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); void handleDeleteCategory(cat.id); }}
+                        disabled={isBusy}
+                        className="p-1 hover:bg-red-50 rounded text-slate-500 hover:text-red-600 disabled:opacity-40 disabled:hover:bg-transparent"
                       >
                         <Trash2 size={12} />
                       </button>
-                    )}
-                  </div>
+                    </div>
+
+                    <div className="absolute right-1 top-1/2 -translate-y-1/2 lg:hidden">
+                      {openActionsId === cat.id ? (
+                        <div className="flex items-center gap-0.5 bg-white rounded-lg shadow-sm border border-slate-100 p-0.5">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); void handleMoveCategory(cat.id, 'up'); }}
+                            disabled={!canMoveUp || isBusy}
+                            className="p-1.5 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-700 disabled:opacity-40 disabled:hover:bg-transparent"
+                            aria-label={`Переместить ${cat.name} вверх`}
+                          >
+                            <ChevronUp size={12} />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); void handleMoveCategory(cat.id, 'down'); }}
+                            disabled={!canMoveDown || isBusy}
+                            className="p-1.5 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-700 disabled:opacity-40 disabled:hover:bg-transparent"
+                            aria-label={`Переместить ${cat.name} вниз`}
+                          >
+                            <ChevronDown size={12} />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleEditStart(cat); }}
+                            className="p-1.5 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-700"
+                            aria-label={`Редактировать ${cat.name}`}
+                          >
+                            <Edit2 size={12} />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); void handleDeleteCategory(cat.id); }}
+                            disabled={isBusy}
+                            className="p-1.5 hover:bg-red-50 rounded text-slate-500 hover:text-red-600 disabled:opacity-40 disabled:hover:bg-transparent"
+                            aria-label={`Удалить ${cat.name}`}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setOpenActionsId(null); }}
+                            className="p-1.5 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-700"
+                            aria-label="Закрыть действия"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActionError('');
+                            setOpenActionsId(cat.id);
+                          }}
+                          className="rounded-lg bg-white/90 border border-slate-200 shadow-sm p-1.5 text-slate-500"
+                          aria-label={`Действия для ${cat.name}`}
+                        >
+                          <MoreHorizontal size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             );
           })}
+          {actionError && (
+            <p className="px-2 pt-1 text-xs text-red-600">{actionError}</p>
+          )}
 
           {/* Add category button */}
           {!showAddForm ? (
             <button
-              onClick={() => setShowAddForm(true)}
+              onClick={() => {
+                setShowAddForm(true);
+                setAddError('');
+              }}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors border-2 border-dashed border-slate-200 hover:border-slate-300 mt-2"
             >
               <Plus size={16} />
@@ -275,8 +469,11 @@ export default function Sidebar({
               <input
                 autoFocus
                 value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') setShowAddForm(false); }}
+                onChange={(e) => {
+                  setNewName(e.target.value);
+                  if (addError) setAddError('');
+                }}
+                onKeyDown={(e) => { if (e.key === 'Enter') void handleAdd(); if (e.key === 'Escape') handleAddFormClose(); }}
                 placeholder="Название категории"
                 className="w-full text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
@@ -285,6 +482,7 @@ export default function Sidebar({
                   <button
                     key={icon}
                     onClick={() => setNewIcon(icon)}
+                    disabled={isAdding}
                     className={`text-base w-8 h-8 rounded-lg flex items-center justify-center transition-all ${newIcon === icon ? 'bg-blue-100 ring-2 ring-blue-400' : 'hover:bg-slate-200'}`}
                   >
                     {icon}
@@ -296,21 +494,27 @@ export default function Sidebar({
                   <button
                     key={c.value}
                     onClick={() => setNewColor(c.value)}
+                    disabled={isAdding}
                     className={`w-6 h-6 rounded-full ${c.bg} transition-all ${newColor === c.value ? 'ring-2 ring-offset-1 ring-slate-400 scale-110' : 'hover:scale-105'}`}
                     title={c.label}
                   />
                 ))}
               </div>
+              {addError && (
+                <p className="text-xs text-red-600">{addError}</p>
+              )}
               <div className="flex gap-2">
                 <button
-                  onClick={handleAdd}
-                  className="flex-1 bg-slate-800 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-slate-700 transition-colors"
+                  onClick={() => void handleAdd()}
+                  disabled={isAdding}
+                  className="flex-1 bg-slate-800 text-white text-xs font-medium py-1.5 rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Добавить
+                  {isAdding ? 'Сохраняем...' : 'Добавить'}
                 </button>
                 <button
-                  onClick={() => setShowAddForm(false)}
-                  className="flex-1 bg-slate-200 text-slate-700 text-xs font-medium py-1.5 rounded-lg hover:bg-slate-300 transition-colors"
+                  onClick={handleAddFormClose}
+                  disabled={isAdding}
+                  className="flex-1 bg-slate-200 text-slate-700 text-xs font-medium py-1.5 rounded-lg hover:bg-slate-300 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Отмена
                 </button>

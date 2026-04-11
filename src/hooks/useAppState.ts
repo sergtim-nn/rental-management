@@ -65,6 +65,10 @@ export function useAppState() {
     setState((s) => ({ ...s, activeCategoryId: id }));
   }, []);
 
+  const sortCategories = useCallback((categories: Category[]) => (
+    [...categories].sort((a, b) => a.order - b.order)
+  ), []);
+
   // ─── Categories ───────────────────────────────────────────────────────────
   const addCategory = useCallback(async (name: string, icon: string, color: string) => {
     const id = generateId();
@@ -73,48 +77,91 @@ export function useAppState() {
       console.error('Failed to create category:', e);
       return null;
     });
-    if (!created) return id;
+    if (!created) return null;
     setState((s) => ({
       ...s,
-      categories: [...s.categories, created],
+      categories: sortCategories([...s.categories, created]),
       activeCategoryId: created.id,
     }));
     return created.id;
-  }, []);
+  }, [sortCategories]);
 
   const updateCategory = useCallback(async (id: string, updates: Partial<Category>) => {
     const cat = stateRef.current.categories.find((c) => c.id === id);
-    if (!cat) return;
+    if (!cat) return false;
     const merged = { ...cat, ...updates };
     // Оптимистичное обновление
     setState((s) => ({
       ...s,
-      categories: s.categories.map((c) => (c.id === id ? merged : c)),
+      categories: sortCategories(s.categories.map((c) => (c.id === id ? merged : c))),
     }));
-    await api.updateCategory(id, merged).catch((err: Error) => {
+    const updatedCategory = await api.updateCategory(id, merged).catch((err: Error) => {
       console.error('Failed to update category:', err);
       // Откат
       setState((s) => ({
         ...s,
-        categories: s.categories.map((c) => (c.id === id ? cat : c)),
+        categories: sortCategories(s.categories.map((c) => (c.id === id ? cat : c))),
       }));
+      return null;
     });
-  }, []);
+    if (!updatedCategory) return false;
+    setState((s) => ({
+      ...s,
+      categories: sortCategories(s.categories.map((c) => (c.id === id ? updatedCategory : c))),
+    }));
+    return true;
+  }, [sortCategories]);
 
   const deleteCategory = useCallback(async (id: string) => {
-    await api.deleteCategory(id).then(() => {
+    try {
+      await api.deleteCategory(id);
       setState((s) => {
         const remaining = s.categories.filter((c) => c.id !== id);
         return {
           ...s,
-          categories: remaining,
+          categories: sortCategories(remaining),
           objects: s.objects.filter((o) => o.categoryId !== id),
           activeCategoryId:
             s.activeCategoryId === id ? (remaining[0]?.id ?? null) : s.activeCategoryId,
         };
       });
-    }).catch((err: Error) => console.error('Failed to delete category:', err));
-  }, []);
+      return true;
+    } catch (err) {
+      console.error('Failed to delete category:', err);
+      return false;
+    }
+  }, [sortCategories]);
+
+  const reorderCategory = useCallback(async (id: string, direction: 'up' | 'down') => {
+    const categories = sortCategories(stateRef.current.categories);
+    const index = categories.findIndex((c) => c.id === id);
+    if (index < 0) return false;
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= categories.length) return false;
+
+    const reordered = [...categories];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(targetIndex, 0, moved);
+
+    const normalized = reordered.map((category, order) => ({ ...category, order }));
+    const previous = categories;
+
+    setState((s) => ({ ...s, categories: normalized }));
+
+    const saved = await Promise.all(
+      normalized.map((category) => api.updateCategory(category.id, category))
+    ).catch((err: Error) => {
+      console.error('Failed to reorder categories:', err);
+      setState((s) => ({ ...s, categories: previous }));
+      return null;
+    });
+
+    if (!saved) return false;
+
+    setState((s) => ({ ...s, categories: sortCategories(saved) }));
+    return true;
+  }, [sortCategories]);
 
   // ─── Objects ──────────────────────────────────────────────────────────────
   const addObject = useCallback(async (
@@ -194,10 +241,15 @@ export function useAppState() {
   }, []);
 
   const deleteObject = useCallback(async (id: string) => {
+    const previousObjects = stateRef.current.objects;
+    if (!previousObjects.some((o) => o.id === id)) return;
+
     setState((s) => ({ ...s, objects: s.objects.filter((o) => o.id !== id) }));
-    await api.deleteObject(id).catch((err: Error) =>
-      console.error('Failed to delete object:', err)
-    );
+
+    await api.deleteObject(id).catch((err: Error) => {
+      console.error('Failed to delete object:', err);
+      setState((s) => ({ ...s, objects: previousObjects }));
+    });
   }, []);
 
   // ─── Payment History ──────────────────────────────────────────────────────
@@ -257,9 +309,37 @@ export function useAppState() {
           : o
       ),
     }));
-    await api.updatePayment(objectId, recordId, updated).catch((err: Error) => {
+    const serverRecord = await api.updatePayment(objectId, recordId, updated).catch((err: Error) => {
       console.error('Failed to update payment record:', err);
+      setState((s) => ({
+        ...s,
+        objects: s.objects.map((o) =>
+          o.id === objectId
+            ? {
+                ...o,
+                paymentHistory: o.paymentHistory.map((p) =>
+                  p.id === recordId ? record : p
+                ),
+              }
+            : o
+        ),
+      }));
+      return null;
     });
+    if (!serverRecord) return;
+    setState((s) => ({
+      ...s,
+      objects: s.objects.map((o) =>
+        o.id === objectId
+          ? {
+              ...o,
+              paymentHistory: o.paymentHistory.map((p) =>
+                p.id === recordId ? serverRecord : p
+              ),
+            }
+          : o
+      ),
+    }));
   }, []);
 
   // ─── Documents ────────────────────────────────────────────────────────────
@@ -280,6 +360,10 @@ export function useAppState() {
   }, []);
 
   const removeDocument = useCallback(async (objectId: string, docId: string) => {
+    const obj = stateRef.current.objects.find((o) => o.id === objectId);
+    if (!obj?.documents.some((d) => d.id === docId)) return;
+    const previousDocuments = obj.documents;
+
     setState((s) => ({
       ...s,
       objects: s.objects.map((o) =>
@@ -288,17 +372,30 @@ export function useAppState() {
           : o
       ),
     }));
-    await api.deleteDocument(objectId, docId).catch((err: Error) =>
-      console.error('Failed to delete document:', err)
-    );
+    await api.deleteDocument(objectId, docId).catch((err: Error) => {
+      console.error('Failed to delete document:', err);
+      setState((s) => ({
+        ...s,
+        objects: s.objects.map((o) =>
+          o.id === objectId
+            ? { ...o, documents: previousDocuments, updatedAt: new Date().toISOString() }
+            : o
+        ),
+      }));
+    });
   }, []);
 
   // ─── Settings ─────────────────────────────────────────────────────────────
   const setNotificationDays = useCallback(async (days: number) => {
+    const previousDays = stateRef.current.notificationDaysBefore;
     setState((s) => ({ ...s, notificationDaysBefore: days }));
-    await api.updateSettings(days).catch((err: Error) =>
-      console.error('Failed to update settings:', err)
-    );
+    const settings = await api.updateSettings(days).catch((err: Error) => {
+      console.error('Failed to update settings:', err);
+      setState((s) => ({ ...s, notificationDaysBefore: previousDays }));
+      return null;
+    });
+    if (!settings) return;
+    setState((s) => ({ ...s, notificationDaysBefore: settings.notificationDaysBefore }));
   }, []);
 
   // ─── Import / Reset ───────────────────────────────────────────────────────
@@ -335,6 +432,7 @@ export function useAppState() {
     addCategory,
     updateCategory,
     deleteCategory,
+    reorderCategory,
     addObject,
     updateObject,
     archiveObject,
