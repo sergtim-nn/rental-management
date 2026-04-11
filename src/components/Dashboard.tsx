@@ -40,21 +40,21 @@ export default function Dashboard({ objects, categories, periodSelection, onSele
 
   const paid = objectSnapshots.filter(
     ({ payment }) =>
-      payment.hasData &&
+      payment.hasAnyData &&
       payment.actualRent >= payment.plannedRent &&
       payment.actualUtilities >= payment.plannedUtilities &&
       payment.plannedRent > 0
   ).length;
   const unpaid = objectSnapshots.filter(
-    ({ payment }) => payment.hasData && payment.actualRent === 0 && payment.plannedRent > 0
+    ({ payment }) => payment.hasAnyData && payment.actualRent === 0 && payment.plannedRent > 0
   ).length;
   const partial = objectSnapshots.filter(
     ({ payment }) =>
-      payment.hasData &&
+      payment.hasAnyData &&
       payment.actualRent > 0 &&
       payment.actualRent < payment.plannedRent
   ).length;
-  const noData = objectSnapshots.filter(({ payment }) => !payment.hasData).length;
+  const noData = objectSnapshots.filter(({ payment }) => !payment.hasAnyData).length;
 
   const statCards = [
     {
