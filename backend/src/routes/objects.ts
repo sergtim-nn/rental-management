@@ -30,11 +30,35 @@ function tryUnlink(filePath: string): void {
   try { fs.unlinkSync(filePath); } catch { /* already gone */ }
 }
 
+// PUT /api/objects/reorder — обновить порядок объектов
+router.put('/reorder', async (req: Request, res: Response): Promise<void> => {
+  const { ids } = req.body as { ids?: string[] };
+  if (!Array.isArray(ids)) {
+    res.status(400).json({ error: 'ids must be an array' });
+    return;
+  }
+  const conn = await req.db.getConnection();
+  try {
+    await conn.beginTransaction();
+    for (let i = 0; i < ids.length; i++) {
+      await conn.query<ResultSetHeader>('UPDATE objects SET sort_order = ? WHERE id = ?', [i, ids[i]]);
+    }
+    await conn.commit();
+    res.json({ success: true });
+  } catch (err) {
+    await conn.rollback();
+    console.error('PUT /objects/reorder error:', err);
+    res.status(500).json({ error: 'Failed to reorder objects' });
+  } finally {
+    conn.release();
+  }
+});
+
 // GET /api/objects
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const [[objectRows], [paymentRows], [docRows]] = await Promise.all([
-      req.db.query<RowDataPacket[]>('SELECT * FROM objects ORDER BY created_at DESC'),
+      req.db.query<RowDataPacket[]>('SELECT * FROM objects ORDER BY sort_order ASC, created_at DESC'),
       req.db.query<RowDataPacket[]>('SELECT * FROM payment_records ORDER BY period ASC'),
       req.db.query<RowDataPacket[]>('SELECT * FROM documents ORDER BY uploaded_at ASC'),
     ]);
@@ -61,21 +85,28 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     const obj = req.body as RealEstateObject;
     const cp  = obj.currentPayment;
 
+    // Новый объект размещается в конце (max sort_order + 1)
+    const [maxRows] = await req.db.query<RowDataPacket[]>(
+      'SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM objects WHERE category_id = ?',
+      [obj.categoryId],
+    );
+    const sortOrder = (maxRows[0]?.next_order as number) ?? 0;
+
     await req.db.query<ResultSetHeader>(
       `INSERT INTO objects
         (id, category_id, street, building, tenant_name, tenant_phone, tenant_telegram,
          contract_date, planned_rent, planned_utilities,
          cp_date, cp_actual_rent, cp_rent_payment_date, cp_rent_payment_type,
          cp_actual_utilities, cp_utilities_payment_date, cp_utilities_payment_type, cp_note,
-         is_archived, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         is_archived, sort_order, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         obj.id, obj.categoryId, obj.street, obj.building,
         obj.tenantName, obj.tenantPhone, obj.tenantTelegram, obj.contractDate,
         obj.plannedRent, obj.plannedUtilities,
         cp.date ?? '', cp.actualRent ?? 0, cp.rentPaymentDate ?? '', cp.rentPaymentType ?? 'cash',
         cp.actualUtilities ?? 0, cp.utilitiesPaymentDate ?? '', cp.utilitiesPaymentType ?? 'cash',
-        cp.note ?? null, obj.isArchived ? 1 : 0, obj.createdAt, obj.updatedAt,
+        cp.note ?? null, obj.isArchived ? 1 : 0, sortOrder, obj.createdAt, obj.updatedAt,
       ],
     );
 

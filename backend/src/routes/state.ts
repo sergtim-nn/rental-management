@@ -14,7 +14,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const [[categoryRows], [objectRows], [paymentRows], [docRows], [settingsRows]] =
       await Promise.all([
         req.db.query<RowDataPacket[]>('SELECT * FROM categories ORDER BY sort_order ASC'),
-        req.db.query<RowDataPacket[]>('SELECT * FROM objects ORDER BY created_at DESC'),
+        req.db.query<RowDataPacket[]>('SELECT * FROM objects ORDER BY sort_order ASC, created_at DESC'),
         req.db.query<RowDataPacket[]>('SELECT * FROM payment_records ORDER BY period ASC'),
         req.db.query<RowDataPacket[]>('SELECT * FROM documents ORDER BY uploaded_at ASC'),
         req.db.query<RowDataPacket[]>('SELECT notification_days_before FROM settings WHERE id = 1'),

@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS objects (
   cp_utilities_payment_type ENUM('cash','card') NOT NULL DEFAULT 'cash',
   cp_note                   TEXT,
   is_archived               TINYINT(1)          NOT NULL DEFAULT 0,
+  sort_order                INT                 NOT NULL DEFAULT 0,
   created_at                VARCHAR(64)         NOT NULL DEFAULT '',
   updated_at                VARCHAR(64)         NOT NULL DEFAULT '',
   PRIMARY KEY (id),

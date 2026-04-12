@@ -108,6 +108,11 @@ export const api = {
     request<RealEstateObject>(`/objects/${id}/archive`, { method: 'POST' }),
   restoreObject: (id: string) =>
     request<RealEstateObject>(`/objects/${id}/restore`, { method: 'POST' }),
+  reorderObjects: (ids: string[]) =>
+    request<{ success: boolean }>('/objects/reorder', {
+      method: 'PUT',
+      body: JSON.stringify({ ids }),
+    }),
 
   // Payments
   createPayment: (objectId: string, payment: PaymentRecord) =>

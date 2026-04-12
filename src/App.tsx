@@ -5,7 +5,7 @@ import { getCurrentPeriod } from './store/storage';
 import { normalizePeriodSelection, type PeriodSelection } from './utils/payments';
 
 import Sidebar from './components/Sidebar';
-import ObjectCard from './components/ObjectCard';
+import SortableObjectsGrid from './components/SortableObjectsGrid';
 import ObjectModal from './components/ObjectModal';
 import Dashboard from './components/Dashboard';
 import SettingsView from './components/SettingsView';
@@ -477,28 +477,16 @@ export default function App() {
                   }
                 />
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {categoryObjects.map((obj) => (
-                    <ObjectCard
-                      key={obj.id}
-                      obj={obj}
-                      category={state.categories.find((c) => c.id === obj.categoryId)}
-                      periodSelection={normalizedPeriodSelection}
-                      onClick={() => handleOpenObject(obj.id)}
-                      onArchive={() => archiveObject(obj.id)}
-                      onRestore={() => restoreObject(obj.id)}
-                      onDelete={() => deleteObject(obj.id)}
-                    />
-                  ))}
-                  {/* Add new card */}
-                  <button
-                    onClick={handleNewObject}
-                    className="border-2 border-dashed border-[#d8d0e8] rounded-2xl p-4 flex flex-col items-center justify-center gap-2 text-[#967BB6] hover:border-[#967BB6] hover:bg-[#f0ebf8] transition-all min-h-[160px]"
-                  >
-                    <Plus size={22} />
-                    <span className="text-xs font-medium">Добавить объект</span>
-                  </button>
-                </div>
+                <SortableObjectsGrid
+                  objects={categoryObjects}
+                  categories={state.categories}
+                  periodSelection={normalizedPeriodSelection}
+                  onOpenObject={handleOpenObject}
+                  onArchiveObject={archiveObject}
+                  onRestoreObject={restoreObject}
+                  onDeleteObject={deleteObject}
+                  onNewObject={handleNewObject}
+                />
               )}
             </>
           )}
@@ -513,22 +501,17 @@ export default function App() {
                   subtitle="Заархивированные объекты будут отображаться здесь"
                 />
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {archivedObjects.map((obj) => (
-                    <ObjectCard
-                      key={obj.id}
-                      obj={obj}
-                      category={state.categories.find((c) => c.id === obj.categoryId)}
-                      periodSelection={normalizedPeriodSelection}
-                      onClick={() => handleOpenObject(obj.id)}
-                      onArchive={() => archiveObject(obj.id)}
-                      onRestore={() => restoreObject(obj.id)}
-                      onDelete={() => {
-                        if (window.confirm('Удалить объект навсегда?')) deleteObject(obj.id);
-                      }}
-                    />
-                  ))}
-                </div>
+                <SortableObjectsGrid
+                  objects={archivedObjects}
+                  categories={state.categories}
+                  periodSelection={normalizedPeriodSelection}
+                  onOpenObject={handleOpenObject}
+                  onArchiveObject={archiveObject}
+                  onRestoreObject={restoreObject}
+                  onDeleteObject={(id) => {
+                    if (window.confirm('Удалить объект навсегда?')) deleteObject(id);
+                  }}
+                />
               )}
             </>
           )}
