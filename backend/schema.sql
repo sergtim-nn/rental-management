@@ -93,3 +93,16 @@ CREATE TABLE IF NOT EXISTS settings (
 
 -- Ensure settings row exists
 INSERT IGNORE INTO settings (id, notification_days_before) VALUES (1, 3);
+
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+  id            VARCHAR(64)          NOT NULL,
+  phone         VARCHAR(20)          NOT NULL,
+  name          VARCHAR(255)         NOT NULL DEFAULT '',
+  password_hash VARCHAR(255)         NOT NULL,
+  role          ENUM('admin','user') NOT NULL DEFAULT 'user',
+  is_active     TINYINT(1)           NOT NULL DEFAULT 1,
+  created_at    VARCHAR(64)          NOT NULL DEFAULT '',
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_users_phone (phone)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

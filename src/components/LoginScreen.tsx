@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Lock, Eye, EyeOff } from 'lucide-react';
+import { Lock, Eye, EyeOff, Phone } from 'lucide-react';
 
 interface LoginScreenProps {
-  onLogin: (password: string) => Promise<void>;
+  onLogin: (phone: string, password: string) => Promise<void>;
 }
 
 export default function LoginScreen({ onLogin }: LoginScreenProps) {
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -13,13 +14,14 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!password) return;
+    if (!phone || !password) return;
     setError(null);
     setIsLoading(true);
     try {
-      await onLogin(password);
-    } catch {
-      setError('Неверный пароль');
+      await onLogin(phone, password);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Ошибка входа';
+      setError(message || 'Неверный номер телефона или пароль');
     } finally {
       setIsLoading(false);
     }
@@ -34,16 +36,29 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           </div>
         </div>
         <h1 className="text-xl font-bold text-slate-800 text-center mb-1">РентаМенеджер</h1>
-        <p className="text-sm text-slate-400 text-center mb-6">Введите пароль для входа</p>
+        <p className="text-sm text-slate-400 text-center mb-6">Введите данные для входа</p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="relative">
+            <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Номер телефона"
+              autoFocus
+              autoComplete="tel"
+              className="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
+            />
+          </div>
+
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Пароль"
-              autoFocus
+              autoComplete="current-password"
               className="w-full border border-slate-200 rounded-xl px-4 py-3 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all"
             />
             <button
@@ -61,7 +76,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
 
           <button
             type="submit"
-            disabled={isLoading || !password}
+            disabled={isLoading || !phone || !password}
             className="w-full bg-slate-800 text-white rounded-xl py-3 text-sm font-semibold hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Вход...' : 'Войти'}

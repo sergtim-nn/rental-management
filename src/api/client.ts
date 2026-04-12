@@ -1,4 +1,4 @@
-import { AppState, Category, RealEstateObject, PaymentRecord, Document } from '../types';
+import { AppState, Category, RealEstateObject, PaymentRecord, Document, User } from '../types';
 
 const API_BASE = '/api';
 
@@ -54,11 +54,20 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export const api = {
   // Auth
-  login: (password: string) =>
-    request<{ token: string }>('/auth/login', {
+  login: (phone: string, password: string) =>
+    request<{ token: string; user: User }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ phone, password }),
     }),
+
+  // Users (admin only)
+  getUsers: () => request<User[]>('/users'),
+  createUser: (data: { phone: string; name: string; password: string; role: 'admin' | 'user' }) =>
+    request<User>('/users', { method: 'POST', body: JSON.stringify(data) }),
+  updateUser: (id: string, data: Partial<{ name: string; password: string; role: 'admin' | 'user'; isActive: boolean }>) =>
+    request<User>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteUser: (id: string) =>
+    request<void>(`/users/${id}`, { method: 'DELETE' }),
 
   // State
   getState: () => request<AppState>('/state'),

@@ -68,6 +68,15 @@ export interface AppState {
   notificationDaysBefore: number;
 }
 
+export interface User {
+  id: string;
+  phone: string;
+  name: string;
+  role: 'admin' | 'user';
+  isActive: boolean;
+  created_at: string;
+}
+
 export interface Notification {
   objectId: string;
   objectAddress: string;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { AppState, Category, RealEstateObject, PaymentRecord } from '../types';
+import { AppState, Category, RealEstateObject, PaymentRecord, User } from '../types';
 import { generateId, emptyCurrentPayment } from '../store/storage';
 import { api, getToken, setToken, removeToken } from '../api/client';
 
@@ -17,10 +17,23 @@ const EMPTY_STATE: AppState = {
   notificationDaysBefore: 3,
 };
 
+function parseCurrentUser(): User | null {
+  const token = getToken();
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1])) as { userId?: string; phone?: string; name?: string; role?: string };
+    if (!payload.userId) return null;
+    return { id: payload.userId, phone: payload.phone ?? '', name: payload.name ?? '', role: (payload.role as User['role']) ?? 'user', isActive: true, created_at: '' };
+  } catch {
+    return null;
+  }
+}
+
 export function useAppState() {
   const [state, setState] = useState<AppState>(EMPTY_STATE);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getToken()));
+  const [currentUser, setCurrentUser] = useState<User | null>(() => parseCurrentUser());
 
   // Всегда актуальный state для использования в колбэках без зависимостей
   const stateRef = useRef(state);
@@ -48,15 +61,17 @@ export function useAppState() {
   }, [isAuthenticated]);
 
   // ─── Авторизация ───────────────────────────────────────────────────────────
-  const login = useCallback(async (password: string) => {
-    const { token } = await api.login(password);
+  const login = useCallback(async (phone: string, password: string) => {
+    const { token, user } = await api.login(phone, password);
     setToken(token);
+    setCurrentUser(user);
     setIsAuthenticated(true);
   }, []);
 
   const logout = useCallback(() => {
     removeToken();
     setIsAuthenticated(false);
+    setCurrentUser(null);
     setState(EMPTY_STATE);
   }, []);
 
@@ -481,6 +496,7 @@ export function useAppState() {
     state,
     isLoading,
     isAuthenticated,
+    currentUser,
     login,
     logout,
     setActiveCategoryId,

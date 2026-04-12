@@ -20,6 +20,7 @@ export default function App() {
     state,
     isLoading,
     isAuthenticated,
+    currentUser,
     login,
     logout,
     setActiveCategoryId,
@@ -161,7 +162,7 @@ export default function App() {
 
   // ─── Auth (после всех хуков) ──────────────────────────────────────────────
   if (!isAuthenticated) {
-    return <LoginScreen onLogin={login} />;
+    return <LoginScreen onLogin={(phone, password) => login(phone, password)} />;
   }
 
   if (isLoading) {
@@ -536,6 +537,7 @@ export default function App() {
           {activeView === 'settings' && (
             <SettingsView
               state={state}
+              currentUser={currentUser}
               onImport={handleImportState}
               onReset={handleReset}
               onLogout={logout}
