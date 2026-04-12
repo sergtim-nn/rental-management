@@ -1,12 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
-import pool from '../db';
 
 const router = Router();
 
-router.get('/', async (_req: Request, res: Response): Promise<void> => {
+router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const [rows] = await pool.query<RowDataPacket[]>(
+    const [rows] = await req.db.query<RowDataPacket[]>(
       'SELECT notification_days_before FROM settings WHERE id = 1',
     );
     const notificationDaysBefore = rows.length > 0
@@ -28,7 +27,7 @@ router.put('/', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    await pool.query<ResultSetHeader>(
+    await req.db.query<ResultSetHeader>(
       `INSERT INTO settings (id, notification_days_before) VALUES (1, ?)
        ON DUPLICATE KEY UPDATE notification_days_before = VALUES(notification_days_before)`,
       [notificationDaysBefore],

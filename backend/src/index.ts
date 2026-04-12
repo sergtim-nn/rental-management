@@ -6,7 +6,7 @@ import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import { ensureUploadsDir, generateId } from './utils';
 import { authMiddleware } from './middleware/auth';
-import pool from './db';
+import { adminPool } from './db';
 import authRouter       from './routes/auth';
 import categoriesRouter from './routes/categories';
 import objectsRouter    from './routes/objects';
@@ -16,8 +16,8 @@ import usersRouter      from './routes/users';
 
 ensureUploadsDir();
 
-// При первом запуске: если таблица users пуста и заданы ADMIN_PHONE + ADMIN_PASSWORD,
-// создаём первого администратора автоматически
+// При первом запуске: если таблица users в базе администраторов пуста и заданы ADMIN_PHONE + ADMIN_PASSWORD,
+// создаём первого администратора автоматически в базе администраторов
 async function ensureAdminUser() {
   const adminPhone = process.env.ADMIN_PHONE?.replace(/\D/g, '');
   const adminPassword = process.env.ADMIN_PASSWORD;
@@ -25,16 +25,16 @@ async function ensureAdminUser() {
   if (!adminPhone || !adminPassword) return;
 
   try {
-    const [rows] = await pool.execute('SELECT COUNT(*) as cnt FROM users') as [Array<{ cnt: number }>, unknown];
+    const [rows] = await adminPool.execute('SELECT COUNT(*) as cnt FROM users') as [Array<{ cnt: number }>, unknown];
     if (rows[0].cnt > 0) return;
 
     const passwordHash = await bcrypt.hash(adminPassword, 10);
     const id = generateId();
-    await pool.execute(
+    await adminPool.execute(
       'INSERT INTO users (id, phone, name, password_hash, role, is_active, created_at) VALUES (?, ?, ?, ?, ?, 1, ?)',
       [id, adminPhone, 'Администратор', passwordHash, 'admin', new Date().toISOString()]
     );
-    console.log(`Admin user created: phone=${adminPhone}`);
+    console.log(`Admin user created in admin database: phone=${adminPhone}`);
   } catch (err) {
     console.error('Failed to create admin user:', err);
   }

@@ -1,13 +1,30 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { RowDataPacket } from 'mysql2/promise';
-import pool from '../db';
+import { RowDataPacket, Pool } from 'mysql2/promise';
+import { adminPool, userPool } from '../db';
 
 const router = Router();
 
 function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, '');
+}
+
+interface UserRow extends RowDataPacket {
+  id: string; phone: string; name: string; password_hash: string; role: string; is_active: number;
+}
+
+// Ищет пользователя в указанной базе данных
+async function findUser(pool: Pool, phone: string): Promise<UserRow | null> {
+  try {
+    const [rows] = await pool.query<UserRow[]>(
+      'SELECT id, phone, name, password_hash, role, is_active FROM users WHERE phone = ?',
+      [phone]
+    );
+    return rows[0] ?? null;
+  } catch {
+    return null;
+  }
 }
 
 router.post('/login', async (req: Request, res: Response): Promise<void> => {
@@ -30,17 +47,12 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  interface UserRow extends RowDataPacket {
-    id: string; phone: string; name: string; password_hash: string; role: string; is_active: number;
-  }
-
   try {
-    const [rows] = await pool.query<UserRow[]>(
-      'SELECT id, phone, name, password_hash, role, is_active FROM users WHERE phone = ?',
-      [normalizedPhone]
-    );
-
-    const user = rows[0];
+    // Сначала ищем в базе администраторов, затем в базе пользователей
+    let user = await findUser(adminPool, normalizedPhone);
+    if (!user) {
+      user = await findUser(userPool, normalizedPhone);
+    }
 
     if (!user || !user.is_active) {
       res.status(401).json({ error: 'Неверный номер телефона или пароль' });

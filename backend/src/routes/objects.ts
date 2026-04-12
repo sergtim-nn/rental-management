@@ -1,9 +1,8 @@
 import path from 'path';
 import fs from 'fs';
 import { Router, Request, Response } from 'express';
-import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
+import { RowDataPacket, ResultSetHeader, Pool } from 'mysql2/promise';
 import multer from 'multer';
-import pool from '../db';
 import { RealEstateObject, PaymentRecord } from '../types';
 import { generateId, getUploadsDir } from '../utils';
 import { rowToPaymentRecord, rowToDocument, rowToObject, groupByObjectId } from '../mappers';
@@ -17,11 +16,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-async function fetchObjectWithRelations(id: string): Promise<RealEstateObject | null> {
+async function fetchObjectWithRelations(db: Pool, id: string): Promise<RealEstateObject | null> {
   const [[objRows], [paymentRows], [docRows]] = await Promise.all([
-    pool.query<RowDataPacket[]>('SELECT * FROM objects WHERE id = ?', [id]),
-    pool.query<RowDataPacket[]>('SELECT * FROM payment_records WHERE object_id = ? ORDER BY period ASC', [id]),
-    pool.query<RowDataPacket[]>('SELECT * FROM documents WHERE object_id = ? ORDER BY uploaded_at ASC', [id]),
+    db.query<RowDataPacket[]>('SELECT * FROM objects WHERE id = ?', [id]),
+    db.query<RowDataPacket[]>('SELECT * FROM payment_records WHERE object_id = ? ORDER BY period ASC', [id]),
+    db.query<RowDataPacket[]>('SELECT * FROM documents WHERE object_id = ? ORDER BY uploaded_at ASC', [id]),
   ]);
   if (objRows.length === 0) return null;
   return rowToObject(objRows[0], paymentRows.map(rowToPaymentRecord), docRows.map(rowToDocument));
@@ -32,12 +31,12 @@ function tryUnlink(filePath: string): void {
 }
 
 // GET /api/objects
-router.get('/', async (_req: Request, res: Response): Promise<void> => {
+router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const [[objectRows], [paymentRows], [docRows]] = await Promise.all([
-      pool.query<RowDataPacket[]>('SELECT * FROM objects ORDER BY created_at DESC'),
-      pool.query<RowDataPacket[]>('SELECT * FROM payment_records ORDER BY period ASC'),
-      pool.query<RowDataPacket[]>('SELECT * FROM documents ORDER BY uploaded_at ASC'),
+      req.db.query<RowDataPacket[]>('SELECT * FROM objects ORDER BY created_at DESC'),
+      req.db.query<RowDataPacket[]>('SELECT * FROM payment_records ORDER BY period ASC'),
+      req.db.query<RowDataPacket[]>('SELECT * FROM documents ORDER BY uploaded_at ASC'),
     ]);
 
     const paymentsByObject = groupByObjectId(paymentRows, rowToPaymentRecord);
@@ -62,7 +61,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     const obj = req.body as RealEstateObject;
     const cp  = obj.currentPayment;
 
-    await pool.query<ResultSetHeader>(
+    await req.db.query<ResultSetHeader>(
       `INSERT INTO objects
         (id, category_id, street, building, tenant_name, tenant_phone, tenant_telegram,
          contract_date, planned_rent, planned_utilities,
@@ -80,7 +79,6 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       ],
     );
 
-    // Return the object built from request data — no extra SELECT needed
     res.status(201).json(rowToObject(
       {
         ...obj,
@@ -110,7 +108,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
     const obj = req.body as RealEstateObject;
     const cp  = obj.currentPayment;
 
-    const [result] = await pool.query<ResultSetHeader>(
+    const [result] = await req.db.query<ResultSetHeader>(
       `UPDATE objects SET
         category_id = ?, street = ?, building = ?,
         tenant_name = ?, tenant_phone = ?, tenant_telegram = ?,
@@ -135,7 +133,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    res.json(await fetchObjectWithRelations(id));
+    res.json(await fetchObjectWithRelations(req.db, id));
   } catch (err) {
     console.error('PUT /objects/:id error:', err);
     res.status(500).json({ error: 'Failed to update object' });
@@ -146,13 +144,13 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
 router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const [docRows] = await pool.query<RowDataPacket[]>(
+    const [docRows] = await req.db.query<RowDataPacket[]>(
       'SELECT file_path FROM documents WHERE object_id = ?', [id],
     );
     for (const row of docRows) {
       if (row.file_path) tryUnlink(row.file_path as string);
     }
-    await pool.query<ResultSetHeader>('DELETE FROM objects WHERE id = ?', [id]);
+    await req.db.query<ResultSetHeader>('DELETE FROM objects WHERE id = ?', [id]);
     res.status(204).send();
   } catch (err) {
     console.error('DELETE /objects/:id error:', err);
@@ -163,7 +161,7 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
 async function setArchivedStatus(req: Request, res: Response, archived: boolean): Promise<void> {
   try {
     const { id } = req.params;
-    const [result] = await pool.query<ResultSetHeader>(
+    const [result] = await req.db.query<ResultSetHeader>(
       'UPDATE objects SET is_archived = ?, updated_at = ? WHERE id = ?',
       [archived ? 1 : 0, new Date().toISOString(), id],
     );
@@ -171,7 +169,7 @@ async function setArchivedStatus(req: Request, res: Response, archived: boolean)
       res.status(404).json({ error: 'Object not found' });
       return;
     }
-    res.json(await fetchObjectWithRelations(id));
+    res.json(await fetchObjectWithRelations(req.db, id));
   } catch (err) {
     console.error('setArchivedStatus error:', err);
     res.status(500).json({ error: archived ? 'Failed to archive object' : 'Failed to restore object' });
@@ -189,7 +187,7 @@ router.post('/:id/payments', async (req: Request, res: Response): Promise<void> 
     const pid     = payment.id || generateId();
     const now     = new Date().toISOString();
 
-    const conn = await pool.getConnection();
+    const conn = await req.db.getConnection();
     try {
       await conn.beginTransaction();
       await conn.query<ResultSetHeader>(
@@ -238,7 +236,7 @@ router.put('/:id/payments/:pid', async (req: Request, res: Response): Promise<vo
     const { id, pid } = req.params;
     const payment = req.body as PaymentRecord;
 
-    const [result] = await pool.query<ResultSetHeader>(
+    const [result] = await req.db.query<ResultSetHeader>(
       `UPDATE payment_records SET
         period = ?, rec_date = ?, planned_rent = ?, actual_rent = ?,
         rent_payment_date = ?, rent_payment_type = ?,
@@ -273,7 +271,7 @@ router.put('/:id/payments/:pid', async (req: Request, res: Response): Promise<vo
 router.delete('/:id/payments/:pid', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id, pid } = req.params;
-    await pool.query<ResultSetHeader>(
+    await req.db.query<ResultSetHeader>(
       'DELETE FROM payment_records WHERE id = ? AND object_id = ?', [pid, id],
     );
     res.status(204).send();
@@ -296,7 +294,7 @@ router.post('/:id/documents', upload.single('file'), async (req: Request, res: R
     const now      = new Date().toISOString();
     const filePath = req.file.path;
 
-    await pool.query<ResultSetHeader>(
+    await req.db.query<ResultSetHeader>(
       'INSERT INTO documents (id, object_id, name, size, mime_type, file_path, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [docId, id, req.file.originalname, req.file.size, req.file.mimetype, filePath, now],
     );
@@ -319,7 +317,7 @@ router.post('/:id/documents', upload.single('file'), async (req: Request, res: R
 router.get('/:id/documents/:did/download', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id, did } = req.params;
-    const [rows] = await pool.query<RowDataPacket[]>(
+    const [rows] = await req.db.query<RowDataPacket[]>(
       'SELECT * FROM documents WHERE id = ? AND object_id = ?', [did, id],
     );
 
@@ -343,7 +341,7 @@ router.get('/:id/documents/:did/download', async (req: Request, res: Response): 
 router.delete('/:id/documents/:did', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id, did } = req.params;
-    const [rows] = await pool.query<RowDataPacket[]>(
+    const [rows] = await req.db.query<RowDataPacket[]>(
       'SELECT file_path FROM documents WHERE id = ? AND object_id = ?', [did, id],
     );
 
@@ -353,7 +351,7 @@ router.delete('/:id/documents/:did', async (req: Request, res: Response): Promis
     }
 
     tryUnlink(rows[0].file_path as string);
-    await pool.query<ResultSetHeader>('DELETE FROM documents WHERE id = ? AND object_id = ?', [did, id]);
+    await req.db.query<ResultSetHeader>('DELETE FROM documents WHERE id = ? AND object_id = ?', [did, id]);
     res.status(204).send();
   } catch (err) {
     console.error('DELETE /objects/:id/documents/:did error:', err);

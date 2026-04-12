@@ -2,7 +2,6 @@ import path from 'path';
 import fs from 'fs';
 import { Router, Request, Response } from 'express';
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
-import pool from '../db';
 import { AppState } from '../types';
 import { generateId, ensureUploadsDir } from '../utils';
 import { rowToCategory, rowToPaymentRecord, rowToDocument, rowToObject, groupByObjectId } from '../mappers';
@@ -10,15 +9,15 @@ import { rowToCategory, rowToPaymentRecord, rowToDocument, rowToObject, groupByO
 const router = Router();
 
 // GET /api/state — full AppState in 5 parallel queries
-router.get('/', async (_req: Request, res: Response): Promise<void> => {
+router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const [[categoryRows], [objectRows], [paymentRows], [docRows], [settingsRows]] =
       await Promise.all([
-        pool.query<RowDataPacket[]>('SELECT * FROM categories ORDER BY sort_order ASC'),
-        pool.query<RowDataPacket[]>('SELECT * FROM objects ORDER BY created_at DESC'),
-        pool.query<RowDataPacket[]>('SELECT * FROM payment_records ORDER BY period ASC'),
-        pool.query<RowDataPacket[]>('SELECT * FROM documents ORDER BY uploaded_at ASC'),
-        pool.query<RowDataPacket[]>('SELECT notification_days_before FROM settings WHERE id = 1'),
+        req.db.query<RowDataPacket[]>('SELECT * FROM categories ORDER BY sort_order ASC'),
+        req.db.query<RowDataPacket[]>('SELECT * FROM objects ORDER BY created_at DESC'),
+        req.db.query<RowDataPacket[]>('SELECT * FROM payment_records ORDER BY period ASC'),
+        req.db.query<RowDataPacket[]>('SELECT * FROM documents ORDER BY uploaded_at ASC'),
+        req.db.query<RowDataPacket[]>('SELECT notification_days_before FROM settings WHERE id = 1'),
       ]);
 
     const paymentsByObject = groupByObjectId(paymentRows, rowToPaymentRecord);
@@ -57,7 +56,7 @@ router.post('/import', async (req: Request, res: Response): Promise<void> => {
     }
 
     const uploadsDir = ensureUploadsDir();
-    const conn = await pool.getConnection();
+    const conn = await req.db.getConnection();
 
     try {
       await conn.beginTransaction();

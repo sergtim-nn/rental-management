@@ -21,7 +21,12 @@ function parseCurrentUser(): User | null {
   const token = getToken();
   if (!token) return null;
   try {
-    const payload = JSON.parse(atob(token.split('.')[1])) as { userId?: string; phone?: string; name?: string; role?: string };
+    // atob возвращает latin-1, поэтому декодируем UTF-8 вручную
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const jsonStr = decodeURIComponent(
+      atob(base64).split('').map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
+    );
+    const payload = JSON.parse(jsonStr) as { userId?: string; phone?: string; name?: string; role?: string };
     if (!payload.userId) return null;
     return { id: payload.userId, phone: payload.phone ?? '', name: payload.name ?? '', role: (payload.role as User['role']) ?? 'user', isActive: true, created_at: '' };
   } catch {

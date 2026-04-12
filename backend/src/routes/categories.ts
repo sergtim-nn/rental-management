@@ -1,14 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
-import pool from '../db';
 import { Category } from '../types';
 import { rowToCategory } from '../mappers';
 
 const router = Router();
 
-router.get('/', async (_req: Request, res: Response): Promise<void> => {
+router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const [rows] = await pool.query<RowDataPacket[]>(
+    const [rows] = await req.db.query<RowDataPacket[]>(
       'SELECT * FROM categories ORDER BY sort_order ASC',
     );
     res.json(rows.map(rowToCategory));
@@ -22,7 +21,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id, name, icon, color, isDefault, order } = req.body as Category;
 
-    await pool.query<ResultSetHeader>(
+    await req.db.query<ResultSetHeader>(
       'INSERT INTO categories (id, name, icon, color, is_default, sort_order) VALUES (?, ?, ?, ?, ?, ?)',
       [id, name, icon ?? '', color ?? '', isDefault ? 1 : 0, order ?? 0],
     );
@@ -39,7 +38,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const { name, icon, color, isDefault, order } = req.body as Partial<Category>;
 
-    const [result] = await pool.query<ResultSetHeader>(
+    const [result] = await req.db.query<ResultSetHeader>(
       'UPDATE categories SET name = ?, icon = ?, color = ?, is_default = ?, sort_order = ? WHERE id = ?',
       [name, icon ?? '', color ?? '', isDefault ? 1 : 0, order ?? 0, id],
     );
@@ -60,7 +59,7 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
-    const [objectRows] = await pool.query<RowDataPacket[]>(
+    const [objectRows] = await req.db.query<RowDataPacket[]>(
       'SELECT COUNT(*) AS cnt FROM objects WHERE category_id = ?',
       [id],
     );
@@ -70,7 +69,7 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    await pool.query<ResultSetHeader>('DELETE FROM categories WHERE id = ?', [id]);
+    await req.db.query<ResultSetHeader>('DELETE FROM categories WHERE id = ?', [id]);
     res.status(204).send();
   } catch (err) {
     console.error('DELETE /categories/:id error:', err);

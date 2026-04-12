@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
-import pool from '../db';
+import { userPool } from '../db';
 import { generateId } from '../utils';
 import { AuthUser } from '../middleware/auth';
 
@@ -25,6 +25,7 @@ function rowToUser(u: UserRow) {
 }
 
 // GET /api/users — список всех пользователей (только admin)
+// Возвращает пользователей из базы данных пользователей (userPool)
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   const caller = req.user as AuthUser;
   if (caller.role !== 'admin') {
@@ -33,7 +34,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   }
 
   try {
-    const [rows] = await pool.query<UserRow[]>(
+    const [rows] = await userPool.query<UserRow[]>(
       'SELECT id, phone, name, role, is_active, created_at FROM users ORDER BY created_at ASC'
     );
     res.json(rows.map(rowToUser));
@@ -44,6 +45,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 });
 
 // POST /api/users — создать пользователя (только admin)
+// Новый пользователь сохраняется в базу данных пользователей (userPool)
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   const caller = req.user as AuthUser;
   if (caller.role !== 'admin') {
@@ -80,7 +82,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
   const createdAt = new Date().toISOString();
 
   try {
-    await pool.query<ResultSetHeader>(
+    await userPool.query<ResultSetHeader>(
       'INSERT INTO users (id, phone, name, password_hash, role, is_active, created_at) VALUES (?, ?, ?, ?, ?, 1, ?)',
       [id, normalizedPhone, name ?? '', passwordHash, userRole, createdAt]
     );
@@ -149,6 +151,9 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
 
   values.push(id);
 
+  // Пользователь обновляет себя — ищем в userPool
+  const pool = userPool;
+
   try {
     const [result] = await pool.query<ResultSetHeader>(
       `UPDATE users SET ${setClauses.join(', ')} WHERE id = ?`,
@@ -187,7 +192,7 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   }
 
   try {
-    const [result] = await pool.query<ResultSetHeader>('DELETE FROM users WHERE id = ?', [id]);
+    const [result] = await userPool.query<ResultSetHeader>('DELETE FROM users WHERE id = ?', [id]);
     if (result.affectedRows === 0) {
       res.status(404).json({ error: 'Пользователь не найден' });
       return;
