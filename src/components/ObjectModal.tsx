@@ -35,7 +35,6 @@ interface ObjectModalProps {
     period: string,
     paymentDraft: {
       plannedRent: number;
-      plannedUtilities: number;
       currentPayment: RealEstateObject['currentPayment'];
     }
   ) => void;
@@ -151,7 +150,6 @@ export default function ObjectModal({
   const isParking = categoryId === 'parking';
   const [contractDate, setContractDate] = useState(obj?.contractDate ?? '');
   const [plannedRent, setPlannedRent] = useState(obj?.plannedRent ?? 0);
-  const [plannedUtilities, setPlannedUtilities] = useState(obj?.plannedUtilities ?? 0);
 
   // Current payment
   const cp = obj?.currentPayment ?? emptyCurrentPayment();
@@ -192,7 +190,6 @@ export default function ObjectModal({
         : (telegramValue ? `@${telegramValue}` : ''),
       contractDate,
       plannedRent,
-      plannedUtilities,
       currentPayment: {
         date: today,
         actualRent,
@@ -211,7 +208,6 @@ export default function ObjectModal({
     const period = `${historyYear}-${String(historyMonth + 1).padStart(2, '0')}`;
     onSaveToHistory(period, {
       plannedRent,
-      plannedUtilities,
       currentPayment: {
         date: kind === 'rent' ? (rentPaymentDate || today) : (utilitiesPaymentDate || today),
         actualRent: kind === 'rent' ? actualRent : 0,
@@ -257,7 +253,7 @@ export default function ObjectModal({
     }
   };
 
-  const totalPlanned = isParking ? plannedRent : plannedRent + plannedUtilities;
+  const totalPlanned = plannedRent;
   const totalActual = isParking ? actualRent : actualRent + actualUtilities;
   const diff = totalActual - totalPlanned;
   const canSaveRentPayment = actualRent > 0;
@@ -386,18 +382,13 @@ export default function ObjectModal({
             onToggle={() => setShowContract(!showContract)}
           />
           {showContract && (
-            <div className={`grid grid-cols-1 gap-3 pt-2 pb-3 ${isParking ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
+            <div className="grid grid-cols-1 gap-3 pt-2 pb-3 sm:grid-cols-2">
               <Field label="Дата заключения договора">
                 <input type="date" className={inputCls} value={contractDate} onChange={(e) => setContractDate(e.target.value)} />
               </Field>
               <Field label="Плановая аренда (₽)">
                 <input type="number" className={inputCls} value={plannedRent || ''} onChange={(e) => setPlannedRent(Number(e.target.value))} placeholder="0" />
               </Field>
-              {!isParking && (
-                <Field label="Плановые коммунальные (₽)">
-                  <input type="number" className={inputCls} value={plannedUtilities || ''} onChange={(e) => setPlannedUtilities(Number(e.target.value))} placeholder="0" />
-                </Field>
-              )}
             </div>
           )}
 
@@ -467,14 +458,9 @@ export default function ObjectModal({
               {!isParking && (
                 <div className="bg-white rounded-xl p-4 border border-[#ede9f4] space-y-3">
                   <p className="text-xs font-semibold text-[#967BB6] uppercase tracking-wider">Коммунальные платежи</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="Плановая сумма">
-                      <div className="px-3 py-2.5 bg-[#faf9f6] border border-[#ede9f4] rounded-xl text-sm font-semibold text-slate-700">{formatCurrency(plannedUtilities)}</div>
-                    </Field>
-                    <Field label="Фактическая оплата (₽)">
-                      <input type="number" className={inputCls} value={actualUtilities || ''} onChange={(e) => setActualUtilities(Number(e.target.value))} placeholder="0" />
-                    </Field>
-                  </div>
+                  <Field label="Сумма по счёту (₽)">
+                    <input type="number" className={inputCls} value={actualUtilities || ''} onChange={(e) => setActualUtilities(Number(e.target.value))} placeholder="0" />
+                  </Field>
                   <Field label="Дата оплаты">
                     <input type="date" className={inputCls} value={utilitiesPaymentDate} onChange={(e) => setUtilitiesPaymentDate(e.target.value)} />
                   </Field>
@@ -684,14 +670,12 @@ function HistoryRecord({
   const [actualRent, setActualRent] = useState(record.actualRent);
   const [rentPaymentDate, setRentPaymentDate] = useState(record.rentPaymentDate);
   const [rentPaymentType, setRentPaymentType] = useState<'cash' | 'card'>(record.rentPaymentType);
-  const [plannedUtilities, setPlannedUtilities] = useState(record.plannedUtilities);
   const [actualUtilities, setActualUtilities] = useState(record.actualUtilities);
   const [utilitiesPaymentDate, setUtilitiesPaymentDate] = useState(record.utilitiesPaymentDate);
   const [utilitiesPaymentType, setUtilitiesPaymentType] = useState<'cash' | 'card'>(record.utilitiesPaymentType);
   const [note, setNote] = useState(record.note ?? '');
-  const totalPlanned = record.plannedRent + record.plannedUtilities;
   const totalActual = record.actualRent + record.actualUtilities;
-  const diff = totalActual - totalPlanned;
+  const diff = totalActual - record.plannedRent;
 
   const handleCancel = () => {
     setPeriod(record.period);
@@ -700,7 +684,6 @@ function HistoryRecord({
     setActualRent(record.actualRent);
     setRentPaymentDate(record.rentPaymentDate);
     setRentPaymentType(record.rentPaymentType);
-    setPlannedUtilities(record.plannedUtilities);
     setActualUtilities(record.actualUtilities);
     setUtilitiesPaymentDate(record.utilitiesPaymentDate);
     setUtilitiesPaymentType(record.utilitiesPaymentType);
@@ -716,7 +699,6 @@ function HistoryRecord({
       actualRent,
       rentPaymentDate,
       rentPaymentType,
-      plannedUtilities: isParking ? 0 : plannedUtilities,
       actualUtilities: isParking ? 0 : actualUtilities,
       utilitiesPaymentDate: isParking ? '' : utilitiesPaymentDate,
       utilitiesPaymentType,
@@ -832,10 +814,7 @@ function HistoryRecord({
                 {!isParking && (
                   <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
                     <p className="font-semibold text-slate-600">Коммунальные</p>
-                    <Field label="План">
-                      <input type="number" className={inputCls} value={plannedUtilities || ''} onChange={(e) => setPlannedUtilities(Number(e.target.value))} />
-                    </Field>
-                    <Field label="Факт">
+                    <Field label="Сумма по счёту">
                       <input type="number" className={inputCls} value={actualUtilities || ''} onChange={(e) => setActualUtilities(Number(e.target.value))} />
                     </Field>
                     <Field label="Дата оплаты">
@@ -870,8 +849,7 @@ function HistoryRecord({
               {!isParking && (
                 <div className="space-y-1.5">
                   <p className="font-semibold text-slate-500 uppercase tracking-wider">Коммунальные</p>
-                  <div className="flex justify-between"><span className="text-slate-500">План:</span><span className="font-medium">{formatCurrency(record.plannedUtilities)}</span></div>
-                  <div className="flex justify-between"><span className="text-slate-500">Факт:</span><span className="font-medium">{formatCurrency(record.actualUtilities)}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Сумма:</span><span className="font-medium">{formatCurrency(record.actualUtilities)}</span></div>
                   <div className="flex justify-between"><span className="text-slate-500">Дата:</span><span className="font-medium">{formatDate(record.utilitiesPaymentDate)}</span></div>
                   <div className="flex justify-between"><span className="text-slate-500">Тип:</span><span className="font-medium">{record.utilitiesPaymentType === 'cash' ? '💵 Нал' : '💳 Карта'}</span></div>
                 </div>

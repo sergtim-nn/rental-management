@@ -166,7 +166,7 @@ export default function MobileCategoriesScreen({
         const catObjects  = activeObjects.filter((o) => o.categoryId === cat.id);
         const count       = catObjects.length;
         const payments    = catObjects.map((o) => getPaymentSummaryForSelection(o, periodSelection));
-        const planned     = payments.reduce((s, p) => s + p.plannedRent + p.plannedUtilities, 0);
+        const planned     = payments.reduce((s, p) => s + p.plannedRent, 0);
         const actual      = payments.reduce((s, p) => s + p.actualRent  + p.actualUtilities,  0);
         const pct         = planned > 0 ? Math.min(100, (actual / planned) * 100) : 0;
         const catColor    = CAT_COLORS[cat.color]  ?? CAT_COLORS.blue;

@@ -278,7 +278,6 @@ export function useAppState() {
     period: string,
     paymentDraft?: {
       plannedRent: number;
-      plannedUtilities: number;
       currentPayment: RealEstateObject['currentPayment'];
     }
   ) => {
@@ -288,7 +287,6 @@ export function useAppState() {
       id: generateId(),
       period,
       plannedRent: paymentDraft?.plannedRent ?? obj.plannedRent,
-      plannedUtilities: paymentDraft?.plannedUtilities ?? obj.plannedUtilities,
       ...(paymentDraft?.currentPayment ?? obj.currentPayment),
     };
     const saved = await api.createPayment(objectId, record).catch((err: Error) => {

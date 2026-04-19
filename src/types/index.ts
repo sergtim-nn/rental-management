@@ -8,7 +8,6 @@ export interface PaymentRecord {
   actualRent: number;
   rentPaymentDate: string;
   rentPaymentType: PaymentType;
-  plannedUtilities: number;
   actualUtilities: number;
   utilitiesPaymentDate: string;
   utilitiesPaymentType: PaymentType;
@@ -39,9 +38,8 @@ export interface RealEstateObject {
   contractDate: string;
   // Текущие плановые суммы
   plannedRent: number;
-  plannedUtilities: number;
   // Текущий период (активный платёж)
-  currentPayment: Omit<PaymentRecord, 'id' | 'period' | 'plannedRent' | 'plannedUtilities'>;
+  currentPayment: Omit<PaymentRecord, 'id' | 'period' | 'plannedRent'>;
   // История платежей
   paymentHistory: PaymentRecord[];
   // Документы

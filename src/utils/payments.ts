@@ -18,7 +18,6 @@ export interface PeriodPaymentSnapshot {
   paymentCount: number;
   plannedRent: number;
   actualRent: number;
-  plannedUtilities: number;
   actualUtilities: number;
 }
 
@@ -31,7 +30,6 @@ export interface PaymentSummary {
   missingPeriods: string[];
   plannedRent: number;
   actualRent: number;
-  plannedUtilities: number;
   actualUtilities: number;
 }
 
@@ -82,7 +80,6 @@ export function getPaymentSnapshotForPeriod(
       paymentCount: historyRecords.length,
       plannedRent: latestRecord.plannedRent,
       actualRent: historyRecords.reduce((sum, record) => sum + record.actualRent, 0),
-      plannedUtilities: latestRecord.plannedUtilities,
       actualUtilities: historyRecords.reduce((sum, record) => sum + record.actualUtilities, 0),
     };
   }
@@ -96,7 +93,6 @@ export function getPaymentSnapshotForPeriod(
       paymentCount: hasCurrentPayment ? 1 : 0,
       plannedRent: obj.plannedRent,
       actualRent: obj.currentPayment.actualRent,
-      plannedUtilities: obj.plannedUtilities,
       actualUtilities: obj.currentPayment.actualUtilities,
     };
   }
@@ -108,7 +104,6 @@ export function getPaymentSnapshotForPeriod(
     paymentCount: 0,
     plannedRent: 0,
     actualRent: 0,
-    plannedUtilities: 0,
     actualUtilities: 0,
   };
 }
@@ -129,7 +124,6 @@ export function getPaymentSummaryForSelection(
     missingPeriods: snapshots.filter((snapshot) => !snapshot.hasData).map((snapshot) => snapshot.period),
     plannedRent: snapshots.reduce((sum, snapshot) => sum + snapshot.plannedRent, 0),
     actualRent: snapshots.reduce((sum, snapshot) => sum + snapshot.actualRent, 0),
-    plannedUtilities: snapshots.reduce((sum, snapshot) => sum + snapshot.plannedUtilities, 0),
     actualUtilities: snapshots.reduce((sum, snapshot) => sum + snapshot.actualUtilities, 0),
   };
 }

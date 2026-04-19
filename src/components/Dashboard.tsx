@@ -31,10 +31,9 @@ export default function Dashboard({ objects, categories, periodSelection, onSele
   }));
 
   const totalPlannedRent = objectSnapshots.reduce((s, item) => s + item.payment.plannedRent, 0);
-  const totalPlannedUtils = objectSnapshots.reduce((s, item) => s + item.payment.plannedUtilities, 0);
   const totalActualRent = objectSnapshots.reduce((s, item) => s + item.payment.actualRent, 0);
   const totalActualUtils = objectSnapshots.reduce((s, item) => s + item.payment.actualUtilities, 0);
-  const totalPlanned = totalPlannedRent + totalPlannedUtils;
+  const totalPlanned = totalPlannedRent;
   const totalActual = totalActualRent + totalActualUtils;
   const diff = totalActual - totalPlanned;
 
@@ -42,7 +41,6 @@ export default function Dashboard({ objects, categories, periodSelection, onSele
     ({ payment }) =>
       payment.hasAnyData &&
       payment.actualRent >= payment.plannedRent &&
-      payment.actualUtilities >= payment.plannedUtilities &&
       payment.plannedRent > 0
   ).length;
   const unpaid = objectSnapshots.filter(
@@ -173,7 +171,7 @@ export default function Dashboard({ objects, categories, periodSelection, onSele
             const catObjects = activeObjects.filter((o) => o.categoryId === cat.id);
             if (catObjects.length === 0) return null;
             const catSnapshots = catObjects.map((obj) => getPaymentSummaryForSelection(obj, periodSelection));
-            const catPlanned = catSnapshots.reduce((s, payment) => s + payment.plannedRent + payment.plannedUtilities, 0);
+            const catPlanned = catSnapshots.reduce((s, payment) => s + payment.plannedRent, 0);
             const catActual = catSnapshots.reduce((s, payment) => s + payment.actualRent + payment.actualUtilities, 0);
             const pct = catPlanned > 0 ? (catActual / catPlanned) * 100 : 0;
 

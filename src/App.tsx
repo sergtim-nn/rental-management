@@ -230,7 +230,6 @@ export default function App() {
     period: string,
     paymentDraft: {
       plannedRent: number;
-      plannedUtilities: number;
       currentPayment: RealEstateObject['currentPayment'];
     }
   ) => {

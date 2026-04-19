@@ -87,7 +87,7 @@ router.post('/import', async (req: Request, res: Response): Promise<void> => {
           [
             obj.id, obj.categoryId, obj.street, obj.building,
             obj.tenantName, obj.tenantPhone, obj.tenantTelegram, obj.contractDate,
-            obj.plannedRent, obj.plannedUtilities,
+            obj.plannedRent, 0,
             cp?.date ?? '', cp?.actualRent ?? 0,
             cp?.rentPaymentDate ?? '', cp?.rentPaymentType ?? 'cash',
             cp?.actualUtilities ?? 0,
@@ -109,7 +109,7 @@ router.post('/import', async (req: Request, res: Response): Promise<void> => {
               payment.id, obj.id, payment.period, payment.date,
               payment.plannedRent, payment.actualRent,
               payment.rentPaymentDate, payment.rentPaymentType,
-              payment.plannedUtilities, payment.actualUtilities,
+              0, payment.actualUtilities,
               payment.utilitiesPaymentDate, payment.utilitiesPaymentType,
               payment.note ?? null,
             ],

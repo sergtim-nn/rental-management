@@ -21,7 +21,6 @@ export function rowToPaymentRecord(row: RowDataPacket): PaymentRecord {
     actualRent:           Number(row.actual_rent),
     rentPaymentDate:      row.rent_payment_date as string,
     rentPaymentType:      row.rent_payment_type as PaymentType,
-    plannedUtilities:     Number(row.planned_utilities),
     actualUtilities:      Number(row.actual_utilities),
     utilitiesPaymentDate: row.utilities_payment_date as string,
     utilitiesPaymentType: row.utilities_payment_type as PaymentType,
@@ -55,7 +54,6 @@ export function rowToObject(
     tenantTelegram:   row.tenant_telegram as string,
     contractDate:     row.contract_date as string,
     plannedRent:      Number(row.planned_rent),
-    plannedUtilities: Number(row.planned_utilities),
     currentPayment: {
       date:                  row.cp_date as string,
       actualRent:            Number(row.cp_actual_rent),

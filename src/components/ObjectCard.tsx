@@ -71,9 +71,9 @@ export default function ObjectCard({
   const isParking = category?.id === 'parking';
   const payment = getPaymentSummaryForSelection(obj, periodSelection);
 
-  const totalPlanned = isParking ? payment.plannedRent : payment.plannedRent + payment.plannedUtilities;
+  const totalPlanned = payment.plannedRent;
   const totalActual  = isParking ? payment.actualRent  : payment.actualRent + payment.actualUtilities;
-  const overallStatus = getPaymentStatus(totalPlanned, totalActual);
+  const overallStatus = getPaymentStatus(totalPlanned, payment.actualRent);
 
   return (
     <div
@@ -172,27 +172,17 @@ export default function ObjectCard({
             </div>
           </div>
           {/* Utilities row — only if present */}
-          {!isParking && (payment.plannedUtilities > 0 || payment.actualUtilities > 0) && (
+          {!isParking && payment.actualUtilities > 0 && (
             <div className="flex items-center justify-between gap-1">
               <span className="text-[10px] text-slate-500 shrink-0">Коммун.</span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-xs font-bold text-slate-800">{formatCurrency(payment.actualUtilities)}</span>
-                {payment.plannedUtilities > 0 && (
-                  <span className="text-[10px] text-slate-400">/ {formatCurrency(payment.plannedUtilities)}</span>
-                )}
-              </div>
+              <span className="text-xs font-bold text-slate-800">{formatCurrency(payment.actualUtilities)}</span>
             </div>
           )}
-          {/* Total row when there are two payment types */}
-          {!isParking && (payment.plannedUtilities > 0 || payment.actualUtilities > 0) && (
+          {/* Total row when utilities are present */}
+          {!isParking && payment.actualUtilities > 0 && (
             <div className="flex items-center justify-between gap-1 border-t border-[#ede9f4] pt-1">
               <span className="text-[10px] text-slate-400 shrink-0">Итого</span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-xs font-bold text-slate-800">{formatCurrency(totalActual)}</span>
-                {totalPlanned > 0 && (
-                  <span className="text-[10px] text-slate-400">/ {formatCurrency(totalPlanned)}</span>
-                )}
-              </div>
+              <span className="text-xs font-bold text-slate-800">{formatCurrency(totalActual)}</span>
             </div>
           )}
         </div>

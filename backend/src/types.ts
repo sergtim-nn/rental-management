@@ -8,7 +8,6 @@ export interface PaymentRecord {
   actualRent: number;
   rentPaymentDate: string;
   rentPaymentType: PaymentType;
-  plannedUtilities: number;
   actualUtilities: number;
   utilitiesPaymentDate: string;
   utilitiesPaymentType: PaymentType;
@@ -46,7 +45,6 @@ export interface RealEstateObject {
   tenantTelegram: string;
   contractDate: string;
   plannedRent: number;
-  plannedUtilities: number;
   currentPayment: CurrentPayment;
   paymentHistory: PaymentRecord[];
   documents: Document[];
