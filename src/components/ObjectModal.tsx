@@ -163,10 +163,14 @@ export default function ObjectModal({
   const [utilitiesPaymentType, setUtilitiesPaymentType] = useState<'cash' | 'card'>(cp.utilitiesPaymentType);
   const [note, setNote] = useState(cp.note ?? '');
 
-  // Period for history save
+  // Period for history save — аренда: текущий месяц, коммуналка: предыдущий
   const now = new Date();
-  const [historyYear, setHistoryYear] = useState(now.getFullYear());
-  const [historyMonth, setHistoryMonth] = useState(now.getMonth()); // 0-indexed
+  const prevMonthIdx = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+  const prevMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  const [rentHistoryYear, setRentHistoryYear] = useState(now.getFullYear());
+  const [rentHistoryMonth, setRentHistoryMonth] = useState(now.getMonth()); // 0-indexed
+  const [utilHistoryYear, setUtilHistoryYear] = useState(prevMonthYear);
+  const [utilHistoryMonth, setUtilHistoryMonth] = useState(prevMonthIdx); // 0-indexed
 
   // UI sections
   const [showAddress, setShowAddress] = useState(true);
@@ -207,7 +211,9 @@ export default function ObjectModal({
   };
 
   const handleSavePaymentToHistory = (kind: 'rent' | 'utilities') => {
-    const period = `${historyYear}-${String(historyMonth + 1).padStart(2, '0')}`;
+    const year  = kind === 'rent' ? rentHistoryYear  : utilHistoryYear;
+    const month = kind === 'rent' ? rentHistoryMonth : utilHistoryMonth;
+    const period = `${year}-${String(month + 1).padStart(2, '0')}`;
     onSaveToHistory(period, {
       plannedRent,
       currentPayment: {
@@ -230,6 +236,8 @@ export default function ObjectModal({
       setPlannedUtilities(0);
       setActualUtilities(0);
       setUtilitiesPaymentDate(today);
+      setUtilHistoryMonth(prevMonthIdx);
+      setUtilHistoryYear(prevMonthYear);
     }
     setTimeout(() => setSavedPaymentMessage(null), 3000);
   };
@@ -261,7 +269,7 @@ export default function ObjectModal({
   const totalActual = isParking ? actualRent : actualRent + actualUtilities;
   const diff = totalActual - totalPlanned;
   const canSaveRentPayment = actualRent > 0;
-  const canSaveUtilitiesPayment = actualUtilities > 0;
+  const canSaveUtilitiesPayment = plannedUtilities > 0 || actualUtilities > 0;
 
   const years = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
 
@@ -427,8 +435,8 @@ export default function ObjectModal({
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
                       <Field label="Месяц">
                         <select
-                          value={historyMonth}
-                          onChange={(e) => setHistoryMonth(Number(e.target.value))}
+                          value={rentHistoryMonth}
+                          onChange={(e) => setRentHistoryMonth(Number(e.target.value))}
                           className={inputCls}
                         >
                           {MONTHS_RU.map((m, i) => (
@@ -438,8 +446,8 @@ export default function ObjectModal({
                       </Field>
                       <Field label="Год">
                         <select
-                          value={historyYear}
-                          onChange={(e) => setHistoryYear(Number(e.target.value))}
+                          value={rentHistoryYear}
+                          onChange={(e) => setRentHistoryYear(Number(e.target.value))}
                           className={inputCls}
                         >
                           {years.map((y) => <option key={y} value={y}>{y}</option>)}
@@ -481,8 +489,8 @@ export default function ObjectModal({
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
                         <Field label="Месяц">
                           <select
-                            value={historyMonth}
-                            onChange={(e) => setHistoryMonth(Number(e.target.value))}
+                            value={utilHistoryMonth}
+                            onChange={(e) => setUtilHistoryMonth(Number(e.target.value))}
                             className={inputCls}
                           >
                             {MONTHS_RU.map((m, i) => (
@@ -492,8 +500,8 @@ export default function ObjectModal({
                         </Field>
                         <Field label="Год">
                           <select
-                            value={historyYear}
-                            onChange={(e) => setHistoryYear(Number(e.target.value))}
+                            value={utilHistoryYear}
+                            onChange={(e) => setUtilHistoryYear(Number(e.target.value))}
                             className={inputCls}
                           >
                             {years.map((y) => <option key={y} value={y}>{y}</option>)}

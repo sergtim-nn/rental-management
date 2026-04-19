@@ -1,9 +1,10 @@
 import { RealEstateObject, Category } from '../types';
 import { formatCurrency, formatDate } from '../utils/notifications';
+import { getCurrentPeriod } from '../store/storage';
 import {
-  PeriodSelection,
-  formatSelectionLabel,
-  getPaymentSummaryForSelection,
+  getPreviousPeriod,
+  formatPeriodShort,
+  getPaymentSnapshotForPeriod,
 } from '../utils/payments';
 import {
   MapPin,
@@ -23,7 +24,6 @@ import {
 interface ObjectCardProps {
   obj: RealEstateObject;
   category: Category | undefined;
-  periodSelection: PeriodSelection;
   onClick: () => void;
   onArchive: () => void;
   onRestore: () => void;
@@ -61,7 +61,6 @@ function getPaymentStatus(planned: number, actual: number): {
 export default function ObjectCard({
   obj,
   category,
-  periodSelection,
   onClick,
   onArchive,
   onRestore,
@@ -69,11 +68,15 @@ export default function ObjectCard({
 }: ObjectCardProps) {
   const colors = CATEGORY_COLORS[category?.color ?? 'blue'] ?? CATEGORY_COLORS.blue;
   const isParking = category?.id === 'parking';
-  const payment = getPaymentSummaryForSelection(obj, periodSelection);
 
-  const totalPlanned = payment.plannedRent;
-  const totalActual  = isParking ? payment.actualRent  : payment.actualRent + payment.actualUtilities;
-  const overallStatus = getPaymentStatus(totalPlanned, payment.actualRent);
+  const currentPeriod = getCurrentPeriod();
+  const prevPeriod = getPreviousPeriod(currentPeriod);
+  const rentSnap = getPaymentSnapshotForPeriod(obj, currentPeriod);
+  const utilSnap = getPaymentSnapshotForPeriod(obj, prevPeriod);
+
+  const totalPlanned = rentSnap.plannedRent;
+  const totalActual  = isParking ? rentSnap.actualRent : rentSnap.actualRent + utilSnap.actualUtilities;
+  const overallStatus = getPaymentStatus(totalPlanned, rentSnap.actualRent);
 
   return (
     <div
@@ -153,38 +156,43 @@ export default function ObjectCard({
 
         {/* Financials */}
         <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] text-slate-400 leading-none">
-              {formatSelectionLabel(periodSelection)}
-            </p>
-            {obj.contractDate && (
-              <p className="text-[10px] text-slate-400">{formatDate(obj.contractDate)}</p>
-            )}
-          </div>
+          {obj.contractDate && (
+            <p className="text-[10px] text-slate-400 text-right">{formatDate(obj.contractDate)}</p>
+          )}
           {/* Rent row */}
           <div className="flex items-center justify-between gap-1">
-            <span className="text-[10px] text-slate-500 shrink-0">Аренда</span>
+            <span className="text-[10px] text-slate-500 shrink-0">
+              Аренда <span className="text-slate-400">({formatPeriodShort(currentPeriod)})</span>
+            </span>
             <div className="flex items-baseline gap-1">
-              <span className="text-xs font-bold text-slate-800">{formatCurrency(payment.actualRent)}</span>
-              {payment.plannedRent > 0 && (
-                <span className="text-[10px] text-slate-400">/ {formatCurrency(payment.plannedRent)}</span>
+              <span className="text-xs font-bold text-slate-800">{formatCurrency(rentSnap.actualRent)}</span>
+              {rentSnap.plannedRent > 0 && (
+                <span className="text-[10px] text-slate-400">/ {formatCurrency(rentSnap.plannedRent)}</span>
               )}
             </div>
           </div>
-          {/* Utilities row — only if present */}
-          {!isParking && (payment.plannedUtilities > 0 || payment.actualUtilities > 0) && (
+          {/* Utilities row — previous month, only for non-parking */}
+          {!isParking && (
             <div className="flex items-center justify-between gap-1">
-              <span className="text-[10px] text-slate-500 shrink-0">Коммун.</span>
+              <span className="text-[10px] text-slate-500 shrink-0">
+                Коммун. <span className="text-slate-400">({formatPeriodShort(prevPeriod)})</span>
+              </span>
               <div className="flex items-baseline gap-1">
-                <span className="text-xs font-bold text-slate-800">{formatCurrency(payment.actualUtilities)}</span>
-                {payment.plannedUtilities > 0 && (
-                  <span className="text-[10px] text-slate-400">/ {formatCurrency(payment.plannedUtilities)}</span>
+                {utilSnap.plannedUtilities > 0 || utilSnap.actualUtilities > 0 ? (
+                  <>
+                    <span className="text-xs font-bold text-slate-800">{formatCurrency(utilSnap.actualUtilities)}</span>
+                    {utilSnap.plannedUtilities > 0 && (
+                      <span className="text-[10px] text-slate-400">/ {formatCurrency(utilSnap.plannedUtilities)}</span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-[10px] text-slate-400">нет данных</span>
                 )}
               </div>
             </div>
           )}
-          {/* Total row when utilities are present */}
-          {!isParking && (payment.plannedUtilities > 0 || payment.actualUtilities > 0) && (
+          {/* Total row when utilities present */}
+          {!isParking && (utilSnap.plannedUtilities > 0 || utilSnap.actualUtilities > 0) && (
             <div className="flex items-center justify-between gap-1 border-t border-[#ede9f4] pt-1">
               <span className="text-[10px] text-slate-400 shrink-0">Итого</span>
               <span className="text-xs font-bold text-slate-800">{formatCurrency(totalActual)}</span>

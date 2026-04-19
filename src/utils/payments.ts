@@ -134,6 +134,25 @@ export function getPaymentSummaryForSelection(
   };
 }
 
+export function getPreviousPeriod(period: string): string {
+  const [year, month] = period.split('-').map(Number);
+  if (month === 1) return `${year - 1}-12`;
+  return `${year}-${String(month - 1).padStart(2, '0')}`;
+}
+
+const MONTHS_RU_NOM = [
+  'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+  'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
+];
+
+export function formatPeriodShort(period: string): string {
+  const [yearStr, monthStr] = period.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const name = MONTHS_RU_NOM[month - 1] ?? period;
+  return year === new Date().getFullYear() ? name : `${name} ${year}`;
+}
+
 export function formatSelectionLabel(selection: PeriodSelection): string {
   const normalized = normalizePeriodSelection(selection);
   if (normalized.mode === 'month') return formatPeriod(normalized.month);
