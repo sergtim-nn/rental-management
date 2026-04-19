@@ -226,6 +226,7 @@ export default function SortableObjectsGrid({
               <ObjectCard
                 obj={obj}
                 category={category}
+                periodSelection={periodSelection}
                 onClick={() => { if (!wasDraggingRef.current) onOpenObject(obj.id); }}
                 onArchive={() => onArchiveObject(obj.id)}
                 onRestore={() => onRestoreObject(obj.id)}
@@ -270,6 +271,7 @@ export default function SortableObjectsGrid({
             <ObjectCard
               obj={obj}
               category={category}
+              periodSelection={periodSelection}
               onClick={() => {}}
               onArchive={() => {}}
               onRestore={() => {}}

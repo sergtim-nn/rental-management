@@ -1,10 +1,11 @@
 import { RealEstateObject, Category } from '../types';
 import { formatCurrency, formatDate } from '../utils/notifications';
-import { getCurrentPeriod } from '../store/storage';
 import {
+  PeriodSelection,
+  normalizePeriodSelection,
   getPreviousPeriod,
   formatPeriodShort,
-  getPaymentSnapshotForPeriod,
+  getPaymentSummaryForSelection,
 } from '../utils/payments';
 import {
   MapPin,
@@ -24,6 +25,7 @@ import {
 interface ObjectCardProps {
   obj: RealEstateObject;
   category: Category | undefined;
+  periodSelection: PeriodSelection;
   onClick: () => void;
   onArchive: () => void;
   onRestore: () => void;
@@ -61,6 +63,7 @@ function getPaymentStatus(planned: number, actual: number): {
 export default function ObjectCard({
   obj,
   category,
+  periodSelection,
   onClick,
   onArchive,
   onRestore,
@@ -69,14 +72,24 @@ export default function ObjectCard({
   const colors = CATEGORY_COLORS[category?.color ?? 'blue'] ?? CATEGORY_COLORS.blue;
   const isParking = category?.id === 'parking';
 
-  const currentPeriod = getCurrentPeriod();
-  const prevPeriod = getPreviousPeriod(currentPeriod);
-  const rentSnap = getPaymentSnapshotForPeriod(obj, currentPeriod);
-  const utilSnap = getPaymentSnapshotForPeriod(obj, prevPeriod);
+  const normalizedSel = normalizePeriodSelection(periodSelection);
+  const isMonthMode = normalizedSel.mode === 'month';
 
-  const totalPlanned = rentSnap.plannedRent;
-  const totalActual  = isParking ? rentSnap.actualRent : rentSnap.actualRent + utilSnap.actualUtilities;
-  const overallStatus = getPaymentStatus(totalPlanned, rentSnap.actualRent);
+  // Коммуналка: в режиме месяца — предыдущий месяц, в режиме диапазона — тот же диапазон
+  const utilPeriod = isMonthMode ? getPreviousPeriod(normalizedSel.month) : null;
+  const utilSel: PeriodSelection = isMonthMode
+    ? { mode: 'month', month: utilPeriod!, from: utilPeriod!, to: utilPeriod! }
+    : normalizedSel;
+
+  const rentSummary = getPaymentSummaryForSelection(obj, normalizedSel);
+  const utilSummary = getPaymentSummaryForSelection(obj, utilSel);
+
+  const rentLabel = isMonthMode ? formatPeriodShort(normalizedSel.month) : null;
+  const utilLabel = isMonthMode ? formatPeriodShort(utilPeriod!) : null;
+
+  const totalPlanned = rentSummary.plannedRent;
+  const totalActual  = isParking ? rentSummary.actualRent : rentSummary.actualRent + utilSummary.actualUtilities;
+  const overallStatus = getPaymentStatus(totalPlanned, rentSummary.actualRent);
 
   return (
     <div
@@ -162,27 +175,27 @@ export default function ObjectCard({
           {/* Rent row */}
           <div className="flex items-center justify-between gap-1">
             <span className="text-[10px] text-slate-500 shrink-0">
-              Аренда <span className="text-slate-400">({formatPeriodShort(currentPeriod)})</span>
+              Аренда{rentLabel && <span className="text-slate-400"> ({rentLabel})</span>}
             </span>
             <div className="flex items-baseline gap-1">
-              <span className="text-xs font-bold text-slate-800">{formatCurrency(rentSnap.actualRent)}</span>
-              {rentSnap.plannedRent > 0 && (
-                <span className="text-[10px] text-slate-400">/ {formatCurrency(rentSnap.plannedRent)}</span>
+              <span className="text-xs font-bold text-slate-800">{formatCurrency(rentSummary.actualRent)}</span>
+              {rentSummary.plannedRent > 0 && (
+                <span className="text-[10px] text-slate-400">/ {formatCurrency(rentSummary.plannedRent)}</span>
               )}
             </div>
           </div>
-          {/* Utilities row — previous month, only for non-parking */}
+          {/* Utilities row — previous month in month-mode, same range in range-mode */}
           {!isParking && (
             <div className="flex items-center justify-between gap-1">
               <span className="text-[10px] text-slate-500 shrink-0">
-                Коммун. <span className="text-slate-400">({formatPeriodShort(prevPeriod)})</span>
+                Коммун.{utilLabel && <span className="text-slate-400"> ({utilLabel})</span>}
               </span>
               <div className="flex items-baseline gap-1">
-                {utilSnap.plannedUtilities > 0 || utilSnap.actualUtilities > 0 ? (
+                {utilSummary.plannedUtilities > 0 || utilSummary.actualUtilities > 0 ? (
                   <>
-                    <span className="text-xs font-bold text-slate-800">{formatCurrency(utilSnap.actualUtilities)}</span>
-                    {utilSnap.plannedUtilities > 0 && (
-                      <span className="text-[10px] text-slate-400">/ {formatCurrency(utilSnap.plannedUtilities)}</span>
+                    <span className="text-xs font-bold text-slate-800">{formatCurrency(utilSummary.actualUtilities)}</span>
+                    {utilSummary.plannedUtilities > 0 && (
+                      <span className="text-[10px] text-slate-400">/ {formatCurrency(utilSummary.plannedUtilities)}</span>
                     )}
                   </>
                 ) : (
@@ -192,7 +205,7 @@ export default function ObjectCard({
             </div>
           )}
           {/* Total row when utilities present */}
-          {!isParking && (utilSnap.plannedUtilities > 0 || utilSnap.actualUtilities > 0) && (
+          {!isParking && (utilSummary.plannedUtilities > 0 || utilSummary.actualUtilities > 0) && (
             <div className="flex items-center justify-between gap-1 border-t border-[#ede9f4] pt-1">
               <span className="text-[10px] text-slate-400 shrink-0">Итого</span>
               <span className="text-xs font-bold text-slate-800">{formatCurrency(totalActual)}</span>
