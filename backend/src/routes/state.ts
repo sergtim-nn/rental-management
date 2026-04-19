@@ -109,7 +109,7 @@ router.post('/import', async (req: Request, res: Response): Promise<void> => {
               payment.id, obj.id, payment.period, payment.date,
               payment.plannedRent, payment.actualRent,
               payment.rentPaymentDate, payment.rentPaymentType,
-              0, payment.actualUtilities,
+              payment.plannedUtilities ?? 0, payment.actualUtilities,
               payment.utilitiesPaymentDate, payment.utilitiesPaymentType,
               payment.note ?? null,
             ],

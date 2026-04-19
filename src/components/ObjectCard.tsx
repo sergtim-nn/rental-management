@@ -172,14 +172,19 @@ export default function ObjectCard({
             </div>
           </div>
           {/* Utilities row — only if present */}
-          {!isParking && payment.actualUtilities > 0 && (
+          {!isParking && (payment.plannedUtilities > 0 || payment.actualUtilities > 0) && (
             <div className="flex items-center justify-between gap-1">
               <span className="text-[10px] text-slate-500 shrink-0">Коммун.</span>
-              <span className="text-xs font-bold text-slate-800">{formatCurrency(payment.actualUtilities)}</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-xs font-bold text-slate-800">{formatCurrency(payment.actualUtilities)}</span>
+                {payment.plannedUtilities > 0 && (
+                  <span className="text-[10px] text-slate-400">/ {formatCurrency(payment.plannedUtilities)}</span>
+                )}
+              </div>
             </div>
           )}
           {/* Total row when utilities are present */}
-          {!isParking && payment.actualUtilities > 0 && (
+          {!isParking && (payment.plannedUtilities > 0 || payment.actualUtilities > 0) && (
             <div className="flex items-center justify-between gap-1 border-t border-[#ede9f4] pt-1">
               <span className="text-[10px] text-slate-400 shrink-0">Итого</span>
               <span className="text-xs font-bold text-slate-800">{formatCurrency(totalActual)}</span>

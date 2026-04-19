@@ -8,6 +8,7 @@ export interface PaymentRecord {
   actualRent: number;
   rentPaymentDate: string;
   rentPaymentType: PaymentType;
+  plannedUtilities: number;
   actualUtilities: number;
   utilitiesPaymentDate: string;
   utilitiesPaymentType: PaymentType;

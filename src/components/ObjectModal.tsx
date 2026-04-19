@@ -150,6 +150,7 @@ export default function ObjectModal({
   const isParking = categoryId === 'parking';
   const [contractDate, setContractDate] = useState(obj?.contractDate ?? '');
   const [plannedRent, setPlannedRent] = useState(obj?.plannedRent ?? 0);
+  const [plannedUtilities, setPlannedUtilities] = useState(cp.plannedUtilities ?? 0);
 
   // Current payment
   const cp = obj?.currentPayment ?? emptyCurrentPayment();
@@ -195,6 +196,7 @@ export default function ObjectModal({
         actualRent,
         rentPaymentDate,
         rentPaymentType,
+        plannedUtilities,
         actualUtilities,
         utilitiesPaymentDate,
         utilitiesPaymentType,
@@ -213,6 +215,7 @@ export default function ObjectModal({
         actualRent: kind === 'rent' ? actualRent : 0,
         rentPaymentDate: kind === 'rent' ? rentPaymentDate : '',
         rentPaymentType,
+        plannedUtilities: kind === 'utilities' ? plannedUtilities : 0,
         actualUtilities: kind === 'utilities' ? actualUtilities : 0,
         utilitiesPaymentDate: kind === 'utilities' ? utilitiesPaymentDate : '',
         utilitiesPaymentType,
@@ -224,6 +227,7 @@ export default function ObjectModal({
       setActualRent(0);
       setRentPaymentDate(today);
     } else {
+      setPlannedUtilities(0);
       setActualUtilities(0);
       setUtilitiesPaymentDate(today);
     }
@@ -458,9 +462,14 @@ export default function ObjectModal({
               {!isParking && (
                 <div className="bg-white rounded-xl p-4 border border-[#ede9f4] space-y-3">
                   <p className="text-xs font-semibold text-[#967BB6] uppercase tracking-wider">Коммунальные платежи</p>
-                  <Field label="Сумма по счёту (₽)">
-                    <input type="number" className={inputCls} value={actualUtilities || ''} onChange={(e) => setActualUtilities(Number(e.target.value))} placeholder="0" />
-                  </Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Сумма по счёту (₽)">
+                      <input type="number" className={inputCls} value={plannedUtilities || ''} onChange={(e) => setPlannedUtilities(Number(e.target.value))} placeholder="0" />
+                    </Field>
+                    <Field label="Фактически оплачено (₽)">
+                      <input type="number" className={inputCls} value={actualUtilities || ''} onChange={(e) => setActualUtilities(Number(e.target.value))} placeholder="0" />
+                    </Field>
+                  </div>
                   <Field label="Дата оплаты">
                     <input type="date" className={inputCls} value={utilitiesPaymentDate} onChange={(e) => setUtilitiesPaymentDate(e.target.value)} />
                   </Field>
@@ -670,6 +679,7 @@ function HistoryRecord({
   const [actualRent, setActualRent] = useState(record.actualRent);
   const [rentPaymentDate, setRentPaymentDate] = useState(record.rentPaymentDate);
   const [rentPaymentType, setRentPaymentType] = useState<'cash' | 'card'>(record.rentPaymentType);
+  const [plannedUtilities, setPlannedUtilities] = useState(record.plannedUtilities);
   const [actualUtilities, setActualUtilities] = useState(record.actualUtilities);
   const [utilitiesPaymentDate, setUtilitiesPaymentDate] = useState(record.utilitiesPaymentDate);
   const [utilitiesPaymentType, setUtilitiesPaymentType] = useState<'cash' | 'card'>(record.utilitiesPaymentType);
@@ -684,6 +694,7 @@ function HistoryRecord({
     setActualRent(record.actualRent);
     setRentPaymentDate(record.rentPaymentDate);
     setRentPaymentType(record.rentPaymentType);
+    setPlannedUtilities(record.plannedUtilities);
     setActualUtilities(record.actualUtilities);
     setUtilitiesPaymentDate(record.utilitiesPaymentDate);
     setUtilitiesPaymentType(record.utilitiesPaymentType);
@@ -699,6 +710,7 @@ function HistoryRecord({
       actualRent,
       rentPaymentDate,
       rentPaymentType,
+      plannedUtilities: isParking ? 0 : plannedUtilities,
       actualUtilities: isParking ? 0 : actualUtilities,
       utilitiesPaymentDate: isParking ? '' : utilitiesPaymentDate,
       utilitiesPaymentType,
@@ -815,6 +827,9 @@ function HistoryRecord({
                   <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
                     <p className="font-semibold text-slate-600">Коммунальные</p>
                     <Field label="Сумма по счёту">
+                      <input type="number" className={inputCls} value={plannedUtilities || ''} onChange={(e) => setPlannedUtilities(Number(e.target.value))} />
+                    </Field>
+                    <Field label="Фактически оплачено">
                       <input type="number" className={inputCls} value={actualUtilities || ''} onChange={(e) => setActualUtilities(Number(e.target.value))} />
                     </Field>
                     <Field label="Дата оплаты">
@@ -849,7 +864,8 @@ function HistoryRecord({
               {!isParking && (
                 <div className="space-y-1.5">
                   <p className="font-semibold text-slate-500 uppercase tracking-wider">Коммунальные</p>
-                  <div className="flex justify-between"><span className="text-slate-500">Сумма:</span><span className="font-medium">{formatCurrency(record.actualUtilities)}</span></div>
+                  {record.plannedUtilities > 0 && <div className="flex justify-between"><span className="text-slate-500">По счёту:</span><span className="font-medium">{formatCurrency(record.plannedUtilities)}</span></div>}
+                  <div className="flex justify-between"><span className="text-slate-500">Оплачено:</span><span className="font-medium">{formatCurrency(record.actualUtilities)}</span></div>
                   <div className="flex justify-between"><span className="text-slate-500">Дата:</span><span className="font-medium">{formatDate(record.utilitiesPaymentDate)}</span></div>
                   <div className="flex justify-between"><span className="text-slate-500">Тип:</span><span className="font-medium">{record.utilitiesPaymentType === 'cash' ? '💵 Нал' : '💳 Карта'}</span></div>
                 </div>

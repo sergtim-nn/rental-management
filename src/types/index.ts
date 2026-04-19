@@ -8,6 +8,7 @@ export interface PaymentRecord {
   actualRent: number;
   rentPaymentDate: string;
   rentPaymentType: PaymentType;
+  plannedUtilities: number; // сумма по счёту (вносится при получении счёта)
   actualUtilities: number;
   utilitiesPaymentDate: string;
   utilitiesPaymentType: PaymentType;
