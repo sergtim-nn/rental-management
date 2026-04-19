@@ -150,10 +150,10 @@ export default function ObjectModal({
   const isParking = categoryId === 'parking';
   const [contractDate, setContractDate] = useState(obj?.contractDate ?? '');
   const [plannedRent, setPlannedRent] = useState(obj?.plannedRent ?? 0);
-  const [plannedUtilities, setPlannedUtilities] = useState(cp.plannedUtilities ?? 0);
 
   // Current payment
   const cp = obj?.currentPayment ?? emptyCurrentPayment();
+  const [plannedUtilities, setPlannedUtilities] = useState(cp.plannedUtilities ?? 0);
   const today = new Date().toISOString().split('T')[0];
   const [actualRent, setActualRent] = useState(cp.actualRent);
   const [rentPaymentDate, setRentPaymentDate] = useState(cp.rentPaymentDate || today);
