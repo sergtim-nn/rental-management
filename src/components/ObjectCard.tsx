@@ -44,6 +44,13 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; dot: string; s
   teal:   { bg: 'bg-teal-50',   text: 'text-teal-700',   dot: 'bg-teal-500',   strip: 'bg-teal-500' },
 };
 
+function getAmountColor(actual: number, planned: number): string {
+  if (planned <= 0) return 'text-slate-800';
+  if (actual === 0) return 'text-[#f4724e]';
+  if (actual < planned) return 'text-amber-500';
+  return 'text-[#2ec4a9]';
+}
+
 function getPaymentStatus(planned: number, actual: number): {
   label: string;
   color: string;
@@ -178,7 +185,7 @@ export default function ObjectCard({
               Аренда{rentLabel && <span className="text-slate-400"> ({rentLabel})</span>}
             </span>
             <div className="flex items-baseline gap-1">
-              <span className="text-xs font-bold text-slate-800">{formatCurrency(rentSummary.actualRent)}</span>
+              <span className={`text-xs font-bold ${getAmountColor(rentSummary.actualRent, rentSummary.plannedRent)}`}>{formatCurrency(rentSummary.actualRent)}</span>
               {rentSummary.plannedRent > 0 && (
                 <span className="text-[10px] text-slate-400">/ {formatCurrency(rentSummary.plannedRent)}</span>
               )}
@@ -193,7 +200,7 @@ export default function ObjectCard({
               <div className="flex items-baseline gap-1">
                 {utilSummary.plannedUtilities > 0 || utilSummary.actualUtilities > 0 ? (
                   <>
-                    <span className="text-xs font-bold text-slate-800">{formatCurrency(utilSummary.actualUtilities)}</span>
+                    <span className={`text-xs font-bold ${getAmountColor(utilSummary.actualUtilities, utilSummary.plannedUtilities)}`}>{formatCurrency(utilSummary.actualUtilities)}</span>
                     {utilSummary.plannedUtilities > 0 && (
                       <span className="text-[10px] text-slate-400">/ {formatCurrency(utilSummary.plannedUtilities)}</span>
                     )}

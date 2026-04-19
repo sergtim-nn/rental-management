@@ -223,10 +223,23 @@ export function useAppState() {
       return null;
     });
     if (serverObj) {
-      setState((s) => ({
-        ...s,
-        objects: s.objects.map((o) => (o.id === id ? serverObj : o)),
-      }));
+      setState((s) => {
+        const cur = s.objects.find((o) => o.id === id);
+        // Preserve payment records added to state by a concurrent saveCurrentPaymentToHistory
+        // whose POST may have committed after the PUT's SELECT ran
+        const serverIds = new Set(serverObj.paymentHistory.map((r) => r.id));
+        const localExtra = cur?.paymentHistory.filter((r) => !serverIds.has(r.id)) ?? [];
+        const mergedHistory = [...serverObj.paymentHistory, ...localExtra].sort((a, b) => {
+          const pc = b.period.localeCompare(a.period);
+          return pc !== 0 ? pc : b.date.localeCompare(a.date);
+        });
+        return {
+          ...s,
+          objects: s.objects.map((o) =>
+            o.id === id ? { ...serverObj, paymentHistory: mergedHistory } : o
+          ),
+        };
+      });
     }
   }, []);
 
