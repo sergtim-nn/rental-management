@@ -83,6 +83,7 @@ export function emptyCurrentPayment(): RealEstateObject['currentPayment'] {
     rentPaymentDate: today,
     actualRent: 0,
     rentPaymentType: 'cash',
+    plannedUtilities: 0,
     actualUtilities: 0,
     utilitiesPaymentDate: today,
     utilitiesPaymentType: 'cash',

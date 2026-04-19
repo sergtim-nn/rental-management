@@ -96,7 +96,7 @@ export function getPaymentSnapshotForPeriod(
       paymentCount: hasCurrentPayment ? 1 : 0,
       plannedRent: obj.plannedRent,
       actualRent: obj.currentPayment.actualRent,
-      plannedUtilities: obj.currentPayment.plannedUtilities,
+      plannedUtilities: obj.currentPayment.plannedUtilities ?? 0,
       actualUtilities: obj.currentPayment.actualUtilities,
     };
   }

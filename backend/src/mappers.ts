@@ -60,6 +60,7 @@ export function rowToObject(
       actualRent:            Number(row.cp_actual_rent),
       rentPaymentDate:       row.cp_rent_payment_date as string,
       rentPaymentType:       row.cp_rent_payment_type as PaymentType,
+      plannedUtilities:      0,
       actualUtilities:       Number(row.cp_actual_utilities),
       utilitiesPaymentDate:  row.cp_utilities_payment_date as string,
       utilitiesPaymentType:  row.cp_utilities_payment_type as PaymentType,
