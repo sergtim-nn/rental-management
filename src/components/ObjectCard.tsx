@@ -44,6 +44,24 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; dot: string; s
   teal:   { bg: 'bg-teal-50',   text: 'text-teal-700',   dot: 'bg-teal-500',   strip: 'bg-teal-500' },
 };
 
+function calcHistoryBalance(obj: RealEstateObject, isParking: boolean): number {
+  const now = new Date();
+  const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const rentCutoff = getPreviousPeriod(currentPeriod);
+  const utilCutoff = getPreviousPeriod(rentCutoff);
+
+  let balance = 0;
+  for (const r of obj.paymentHistory) {
+    if (r.period <= rentCutoff) {
+      balance += r.actualRent - r.plannedRent;
+    }
+    if (!isParking && r.period <= utilCutoff && (r.plannedUtilities > 0 || r.actualUtilities > 0)) {
+      balance += r.actualUtilities - (r.plannedUtilities ?? 0);
+    }
+  }
+  return balance;
+}
+
 function getAmountColor(actual: number, planned: number): string {
   if (planned <= 0) return 'text-slate-800';
   if (actual === 0) return 'text-[#f4724e]';
@@ -218,6 +236,21 @@ export default function ObjectCard({
               <span className="text-xs font-bold text-slate-800">{formatCurrency(totalActual)}</span>
             </div>
           )}
+          {/* History balance row */}
+          {(() => {
+            const balance = calcHistoryBalance(obj, isParking);
+            if (balance === 0) return null;
+            return (
+              <div className="flex items-center justify-between gap-1 border-t border-[#ede9f4] pt-1">
+                <span className="text-[10px] text-slate-500 shrink-0">
+                  {balance > 0 ? 'Переплата' : 'Долг'}
+                </span>
+                <span className={`text-xs font-bold ${balance > 0 ? 'text-[#2ec4a9]' : 'text-[#f4724e]'}`}>
+                  {balance > 0 ? '+' : ''}{formatCurrency(balance)}
+                </span>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
