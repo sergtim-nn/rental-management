@@ -30,5 +30,3 @@ export function getPool(role: string) {
   return role === 'admin' ? adminPool : userPool;
 }
 
-// Для обратной совместимости (не используется в роутах)
-export default userPool;

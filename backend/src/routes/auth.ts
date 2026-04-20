@@ -22,8 +22,9 @@ async function findUser(pool: Pool, phone: string): Promise<UserRow | null> {
       [phone]
     );
     return rows[0] ?? null;
-  } catch {
-    return null;
+  } catch (err) {
+    console.error('findUser DB error:', err);
+    throw err;
   }
 }
 

@@ -103,7 +103,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       [
         obj.id, obj.categoryId, obj.street, obj.building,
         obj.tenantName, obj.tenantPhone, obj.tenantTelegram, obj.contractDate,
-        obj.plannedRent, 0,
+        obj.plannedRent, cp.plannedUtilities ?? 0,
         cp.date ?? '', cp.actualRent ?? 0, cp.rentPaymentDate ?? '', cp.rentPaymentType ?? 'cash',
         cp.actualUtilities ?? 0, cp.utilitiesPaymentDate ?? '', cp.utilitiesPaymentType ?? 'cash',
         cp.note ?? null, obj.isArchived ? 1 : 0, sortOrder, obj.createdAt, obj.updatedAt,
@@ -116,7 +116,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
         category_id: obj.categoryId, tenant_name: obj.tenantName,
         tenant_phone: obj.tenantPhone, tenant_telegram: obj.tenantTelegram,
         contract_date: obj.contractDate, planned_rent: obj.plannedRent,
-        planned_utilities: 0, is_archived: obj.isArchived,
+        planned_utilities: cp.plannedUtilities ?? 0, is_archived: obj.isArchived,
         created_at: obj.createdAt, updated_at: obj.updatedAt,
         cp_date: cp.date, cp_actual_rent: cp.actualRent,
         cp_rent_payment_date: cp.rentPaymentDate, cp_rent_payment_type: cp.rentPaymentType,
@@ -151,7 +151,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
       [
         obj.categoryId, obj.street, obj.building,
         obj.tenantName, obj.tenantPhone, obj.tenantTelegram,
-        obj.contractDate, obj.plannedRent, 0,
+        obj.contractDate, obj.plannedRent, cp.plannedUtilities ?? 0,
         cp.date ?? '', cp.actualRent ?? 0, cp.rentPaymentDate ?? '', cp.rentPaymentType ?? 'cash',
         cp.actualUtilities ?? 0, cp.utilitiesPaymentDate ?? '', cp.utilitiesPaymentType ?? 'cash',
         cp.note ?? null, obj.isArchived ? 1 : 0, obj.updatedAt,

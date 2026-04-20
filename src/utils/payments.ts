@@ -82,7 +82,7 @@ export function getPaymentSnapshotForPeriod(
       paymentCount: historyRecords.length,
       plannedRent: latestRecord.plannedRent,
       actualRent: historyRecords.reduce((sum, record) => sum + record.actualRent, 0),
-      plannedUtilities: historyRecords.reduce((max, r) => Math.max(max, r.plannedUtilities ?? 0), 0),
+      plannedUtilities: historyRecords.reduce((sum, r) => sum + (r.plannedUtilities ?? 0), 0),
       actualUtilities: historyRecords.reduce((sum, record) => sum + record.actualUtilities, 0),
     };
   }
