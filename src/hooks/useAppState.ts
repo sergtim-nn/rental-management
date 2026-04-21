@@ -1,7 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AppState, Category, RealEstateObject, PaymentRecord, User } from '../types';
-import { generateId, emptyCurrentPayment, DEFAULT_CATEGORIES } from '../store/storage';
+import { generateId, emptyCurrentPayment } from '../store/storage';
 import { api, getToken, setToken, removeToken } from '../api/client';
+
+export const DEFAULT_CATEGORIES = [
+  { id: 'parking',    name: 'Парковка',     icon: '🅿️', color: 'blue',   isDefault: true, order: 0 },
+  { id: 'apartments', name: 'Квартиры',     icon: '🏠', color: 'green',  isDefault: true, order: 1 },
+  { id: 'commercial', name: 'Коммерческая', icon: '🏢', color: 'purple', isDefault: true, order: 2 },
+  { id: 'other',      name: 'Другое',       icon: '📦', color: 'orange', isDefault: true, order: 3 },
+];
 
 const EMPTY_STATE: AppState = {
   categories: [],
