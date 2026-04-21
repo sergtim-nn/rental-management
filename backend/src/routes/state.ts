@@ -87,7 +87,7 @@ router.post('/import', async (req: Request, res: Response): Promise<void> => {
           [
             obj.id, obj.categoryId, obj.street, obj.building,
             obj.tenantName, obj.tenantPhone, obj.tenantTelegram, obj.contractDate,
-            obj.plannedRent, 0,
+            obj.plannedRent, cp?.plannedUtilities ?? 0,
             cp?.date ?? '', cp?.actualRent ?? 0,
             cp?.rentPaymentDate ?? '', cp?.rentPaymentType ?? 'cash',
             cp?.actualUtilities ?? 0,

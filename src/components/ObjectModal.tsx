@@ -195,6 +195,10 @@ export default function ObjectModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
+    if (contractDate && contractDate > today) {
+      window.alert('Дата заключения договора не может быть в будущем');
+      return;
+    }
     const data: Partial<RealEstateObject> = {
       categoryId,
       street,
@@ -225,8 +229,18 @@ export default function ObjectModal({
     const year  = kind === 'rent' ? rentHistoryYear  : utilHistoryYear;
     const month = kind === 'rent' ? rentHistoryMonth : utilHistoryMonth;
     const period = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    if (period > currentPeriod) {
+      window.alert('Нельзя сохранить платёж за будущий период');
+      return;
+    }
+    const paymentDate = kind === 'rent' ? rentPaymentDate : utilitiesPaymentDate;
+    if (paymentDate && paymentDate > today) {
+      window.alert('Дата оплаты не может быть в будущем');
+      return;
+    }
     onSaveToHistory(period, {
-      plannedRent,
+      plannedRent: kind === 'rent' ? plannedRent : 0,
       currentPayment: {
         date: kind === 'rent' ? (rentPaymentDate || today) : (utilitiesPaymentDate || today),
         actualRent: kind === 'rent' ? actualRent : 0,
@@ -407,10 +421,10 @@ export default function ObjectModal({
           {showContract && (
             <div className="grid grid-cols-1 gap-3 pt-2 pb-3 sm:grid-cols-2">
               <Field label="Дата заключения договора">
-                <input type="date" className={inputCls} value={contractDate} onChange={(e) => setContractDate(e.target.value)} />
+                <input type="date" className={inputCls} max={today} value={contractDate} onChange={(e) => setContractDate(e.target.value)} />
               </Field>
               <Field label="Плановая аренда (₽)">
-                <input type="number" className={inputCls} value={plannedRent || ''} onChange={(e) => setPlannedRent(Number(e.target.value))} placeholder="0" />
+                <input type="number" step="0.01" min="0" className={inputCls} value={plannedRent || ''} onChange={(e) => setPlannedRent(Number(e.target.value))} placeholder="0" />
               </Field>
             </div>
           )}
@@ -432,7 +446,7 @@ export default function ObjectModal({
                     <div className="px-3 py-2.5 bg-[#faf9f6] border border-[#ede9f4] rounded-xl text-sm font-semibold text-slate-700">{formatCurrency(plannedRent)}</div>
                   </Field>
                   <Field label="Фактическая оплата (₽)">
-                    <input type="number" className={inputCls} value={actualRent || ''} onChange={(e) => setActualRent(Number(e.target.value))} placeholder="0" />
+                    <input type="number" step="0.01" min="0" className={inputCls} value={actualRent || ''} onChange={(e) => setActualRent(Number(e.target.value))} placeholder="0" />
                   </Field>
                 </div>
                 <Field label="Дата оплаты">
@@ -483,10 +497,10 @@ export default function ObjectModal({
                   <p className="text-xs font-semibold text-[#967BB6] uppercase tracking-wider">Коммунальные платежи</p>
                   <div className="grid grid-cols-2 gap-3">
                     <Field label="Сумма по счёту (₽)">
-                      <input type="number" className={inputCls} value={plannedUtilities || ''} onChange={(e) => setPlannedUtilities(Number(e.target.value))} placeholder="0" />
+                      <input type="number" step="0.01" min="0" className={inputCls} value={plannedUtilities || ''} onChange={(e) => setPlannedUtilities(Number(e.target.value))} placeholder="0" />
                     </Field>
                     <Field label="Фактически оплачено (₽)">
-                      <input type="number" className={inputCls} value={actualUtilities || ''} onChange={(e) => setActualUtilities(Number(e.target.value))} placeholder="0" />
+                      <input type="number" step="0.01" min="0" className={inputCls} value={actualUtilities || ''} onChange={(e) => setActualUtilities(Number(e.target.value))} placeholder="0" />
                     </Field>
                   </div>
                   <Field label="Дата оплаты">
@@ -901,6 +915,20 @@ function DocumentCard({
   };
 
   const handleSave = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const currentPeriod = today.slice(0, 7);
+    if (period > currentPeriod) {
+      window.alert('Период не может быть в будущем');
+      return;
+    }
+    if (rentPaymentDate && rentPaymentDate > today) {
+      window.alert('Дата оплаты аренды не может быть в будущем');
+      return;
+    }
+    if (utilitiesPaymentDate && utilitiesPaymentDate > today) {
+      window.alert('Дата оплаты коммунальных не может быть в будущем');
+      return;
+    }
     onSave({
       period,
       plannedRent,
@@ -996,10 +1024,10 @@ function DocumentCard({
             <>
               <div className="grid grid-cols-2 gap-2">
                 <Field label="План (аренда)">
-                  <input type="number" className={inputCls} value={plannedRent || ''} onChange={e => setPlannedRent(Number(e.target.value))} />
+                  <input type="number" step="0.01" min="0" className={inputCls} value={plannedRent || ''} onChange={e => setPlannedRent(Number(e.target.value))} />
                 </Field>
                 <Field label="Фактически">
-                  <input type="number" className={inputCls} value={actualRent || ''} onChange={e => setActualRent(Number(e.target.value))} />
+                  <input type="number" step="0.01" min="0" className={inputCls} value={actualRent || ''} onChange={e => setActualRent(Number(e.target.value))} />
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -1015,7 +1043,7 @@ function DocumentCard({
 
           {showBillField && (
             <Field label="Сумма по счёту">
-              <input type="number" className={inputCls} value={plannedUtils || ''} onChange={e => setPlannedUtils(Number(e.target.value))} />
+              <input type="number" step="0.01" min="0" className={inputCls} value={plannedUtils || ''} onChange={e => setPlannedUtils(Number(e.target.value))} />
             </Field>
           )}
 
@@ -1023,7 +1051,7 @@ function DocumentCard({
             <>
               <div className="grid grid-cols-2 gap-2">
                 <Field label="Оплачено">
-                  <input type="number" className={inputCls} value={actualUtils || ''} onChange={e => setActualUtils(Number(e.target.value))} />
+                  <input type="number" step="0.01" min="0" className={inputCls} value={actualUtils || ''} onChange={e => setActualUtils(Number(e.target.value))} />
                 </Field>
                 <Field label="Дата оплаты">
                   <input type="date" className={inputCls} value={utilitiesPaymentDate} onChange={e => setUtilitiesPaymentDate(e.target.value)} />
