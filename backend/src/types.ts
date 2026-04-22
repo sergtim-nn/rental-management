@@ -51,6 +51,7 @@ export interface RealEstateObject {
   paymentHistory: PaymentRecord[];
   documents: Document[];
   isArchived: boolean;
+  version: number;
   createdAt: string;
   updatedAt: string;
 }

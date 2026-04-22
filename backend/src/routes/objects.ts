@@ -42,7 +42,10 @@ router.put('/reorder', async (req: Request, res: Response): Promise<void> => {
   try {
     await conn.beginTransaction();
     for (let i = 0; i < ids.length; i++) {
-      await conn.query<ResultSetHeader>('UPDATE objects SET sort_order = ? WHERE id = ?', [i, ids[i]]);
+      await conn.query<ResultSetHeader>(
+        'UPDATE objects SET sort_order = ?, version = version + 1 WHERE id = ?',
+        [i, ids[i]],
+      );
     }
     await conn.commit();
     res.json({ success: true });
@@ -139,6 +142,14 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const obj = req.body as RealEstateObject;
     const cp  = obj.currentPayment;
+    const clientVersion = typeof obj.version === 'number' ? obj.version : null;
+
+    // Optimistic lock: если клиент прислал version — требуем совпадения с серверной.
+    // Старые клиенты без version поля работают в режиме совместимости (last-write-wins).
+    const whereClause = clientVersion !== null
+      ? 'WHERE id = ? AND version = ?'
+      : 'WHERE id = ?';
+    const whereParams = clientVersion !== null ? [id, clientVersion] : [id];
 
     const [result] = await req.db.query<ResultSetHeader>(
       `UPDATE objects SET
@@ -147,8 +158,8 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
         contract_date = ?, planned_rent = ?, planned_utilities = ?,
         cp_date = ?, cp_actual_rent = ?, cp_rent_payment_date = ?, cp_rent_payment_type = ?,
         cp_actual_utilities = ?, cp_utilities_payment_date = ?, cp_utilities_payment_type = ?,
-        cp_note = ?, is_archived = ?, updated_at = ?
-       WHERE id = ?`,
+        cp_note = ?, is_archived = ?, updated_at = ?, version = version + 1
+       ${whereClause}`,
       [
         obj.categoryId, obj.street, obj.building,
         obj.tenantName, obj.tenantPhone, obj.tenantTelegram,
@@ -156,11 +167,24 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
         cp.date ?? '', cp.actualRent ?? 0, cp.rentPaymentDate ?? '', cp.rentPaymentType ?? 'cash',
         cp.actualUtilities ?? 0, cp.utilitiesPaymentDate ?? '', cp.utilitiesPaymentType ?? 'cash',
         cp.note ?? null, obj.isArchived ? 1 : 0, obj.updatedAt,
-        id,
+        ...whereParams,
       ],
     );
 
     if (result.affectedRows === 0) {
+      if (clientVersion !== null) {
+        // Проверяем, существует ли объект — чтобы отличить 404 от 409
+        const [exists] = await req.db.query<RowDataPacket[]>(
+          'SELECT version FROM objects WHERE id = ?', [id],
+        );
+        if (exists.length > 0) {
+          res.status(409).json({
+            error: 'Object was modified by another session',
+            currentVersion: exists[0].version as number,
+          });
+          return;
+        }
+      }
       res.status(404).json({ error: 'Object not found' });
       return;
     }
@@ -194,7 +218,7 @@ async function setArchivedStatus(req: Request, res: Response, archived: boolean)
   try {
     const { id } = req.params;
     const [result] = await req.db.query<ResultSetHeader>(
-      'UPDATE objects SET is_archived = ?, updated_at = ? WHERE id = ?',
+      'UPDATE objects SET is_archived = ?, updated_at = ?, version = version + 1 WHERE id = ?',
       [archived ? 1 : 0, new Date().toISOString(), id],
     );
     if (result.affectedRows === 0) {
@@ -243,7 +267,7 @@ router.post('/:id/payments', async (req: Request, res: Response): Promise<void> 
           cp_date = '', cp_actual_rent = 0, cp_rent_payment_date = '',
           cp_rent_payment_type = 'cash', cp_actual_utilities = 0,
           cp_utilities_payment_date = '', cp_utilities_payment_type = 'cash',
-          cp_note = NULL, updated_at = ?
+          cp_note = NULL, updated_at = ?, version = version + 1
          WHERE id = ?`,
         [now, id],
       );

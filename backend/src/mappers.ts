@@ -69,6 +69,7 @@ export function rowToObject(
     paymentHistory: payments,
     documents:      docs,
     isArchived:     Boolean(row.is_archived),
+    version:        Number(row.version ?? 0),
     createdAt:      row.created_at as string,
     updatedAt:      row.updated_at as string,
   };

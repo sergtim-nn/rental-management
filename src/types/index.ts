@@ -47,6 +47,8 @@ export interface RealEstateObject {
   documents: Document[];
   // Статус
   isArchived: boolean;
+  // Optimistic lock — инкрементится сервером при каждом UPDATE
+  version: number;
   createdAt: string;
   updatedAt: string;
 }

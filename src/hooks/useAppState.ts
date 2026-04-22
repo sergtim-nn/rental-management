@@ -185,7 +185,7 @@ export function useAppState() {
 
   // ─── Objects ──────────────────────────────────────────────────────────────
   const addObject = useCallback(async (
-    data: Omit<RealEstateObject, 'id' | 'createdAt' | 'updatedAt' | 'paymentHistory' | 'documents' | 'currentPayment' | 'isArchived'>
+    data: Omit<RealEstateObject, 'id' | 'createdAt' | 'updatedAt' | 'paymentHistory' | 'documents' | 'currentPayment' | 'isArchived' | 'version'>
   ) => {
     const id = generateId();
     const now = new Date().toISOString();
@@ -195,6 +195,7 @@ export function useAppState() {
       paymentHistory: [],
       documents: [],
       isArchived: false,
+      version: 0,
       createdAt: now,
       updatedAt: now,
     };
@@ -217,9 +218,13 @@ export function useAppState() {
       ...s,
       objects: s.objects.map((o) => (o.id === id ? updated : o)),
     }));
-    const serverObj = await api.updateObject(id, updated).catch((err: Error) => {
+    const serverObj = await api.updateObject(id, updated).catch((err: Error & { status?: number }) => {
       console.error('Failed to update object:', err);
       setState((s) => ({ ...s, objects: s.objects.map((o) => (o.id === id ? obj : o)) }));
+      if (err.status === 409) {
+        window.alert('Объект был изменён в другой вкладке или другим пользователем. Страница будет перезагружена.');
+        window.location.reload();
+      }
       return null;
     });
     if (serverObj) {
