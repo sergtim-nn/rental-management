@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
+import { logError } from '../logger';
 
 const router = Router();
 
@@ -13,7 +14,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       : 3;
     res.json({ notificationDaysBefore });
   } catch (err) {
-    console.error('GET /settings error:', err);
+    logError('GET /settings', err);
     res.status(500).json({ error: 'Failed to fetch settings' });
   }
 });
@@ -35,7 +36,7 @@ router.put('/', async (req: Request, res: Response): Promise<void> => {
 
     res.json({ notificationDaysBefore });
   } catch (err) {
-    console.error('PUT /settings error:', err);
+    logError('PUT /settings', err);
     res.status(500).json({ error: 'Failed to update settings' });
   }
 });

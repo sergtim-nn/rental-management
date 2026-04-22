@@ -4,6 +4,7 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { userPool } from '../db';
 import { generateId } from '../utils';
 import { AuthUser } from '../middleware/auth';
+import { logError } from '../logger';
 
 const router = Router();
 
@@ -39,7 +40,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     );
     res.json(rows.map(rowToUser));
   } catch (err) {
-    console.error('Get users error:', err);
+    logError('GET /users', err);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
@@ -92,7 +93,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     if (mysqlErr.code === 'ER_DUP_ENTRY') {
       res.status(409).json({ error: 'Пользователь с таким номером уже существует' });
     } else {
-      console.error('Create user error:', err);
+      logError('POST /users', err);
       res.status(500).json({ error: 'Ошибка сервера' });
     }
   }
@@ -172,7 +173,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
 
     res.json(rowToUser(rows[0]));
   } catch (err) {
-    console.error('Update user error:', err);
+    logError('PUT /users/:id', err, { id });
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
@@ -199,7 +200,7 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
     }
     res.status(204).send();
   } catch (err) {
-    console.error('Delete user error:', err);
+    logError('DELETE /users/:id', err, { id });
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });

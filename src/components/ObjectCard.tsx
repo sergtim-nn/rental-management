@@ -6,6 +6,7 @@ import {
   getPreviousPeriod,
   formatPeriodShort,
   getPaymentSummaryForSelection,
+  calcHistoryBalance,
 } from '../utils/payments';
 import {
   MapPin,
@@ -43,24 +44,6 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; dot: string; s
   pink:   { bg: 'bg-pink-50',   text: 'text-pink-700',   dot: 'bg-pink-500',   strip: 'bg-pink-500' },
   teal:   { bg: 'bg-teal-50',   text: 'text-teal-700',   dot: 'bg-teal-500',   strip: 'bg-teal-500' },
 };
-
-function calcHistoryBalance(obj: RealEstateObject, isParking: boolean): number {
-  const now = new Date();
-  const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const rentCutoff = getPreviousPeriod(currentPeriod);
-  const utilCutoff = getPreviousPeriod(rentCutoff);
-
-  let balance = 0;
-  for (const r of obj.paymentHistory) {
-    if (r.period <= rentCutoff) {
-      balance += r.actualRent - r.plannedRent;
-    }
-    if (!isParking && r.period <= utilCutoff && (r.plannedUtilities > 0 || r.actualUtilities > 0)) {
-      balance += r.actualUtilities - (r.plannedUtilities ?? 0);
-    }
-  }
-  return balance;
-}
 
 function getAmountColor(actual: number, planned: number): string {
   if (planned <= 0) return 'text-slate-800';

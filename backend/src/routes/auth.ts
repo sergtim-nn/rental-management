@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { RowDataPacket, Pool } from 'mysql2/promise';
 import { adminPool, userPool } from '../db';
+import { logError } from '../logger';
 
 const router = Router();
 
@@ -23,7 +24,7 @@ async function findUser(pool: Pool, phone: string): Promise<UserRow | null> {
     );
     return rows[0] ?? null;
   } catch (err) {
-    console.error('findUser DB error:', err);
+    logError('findUser DB error', err);
     throw err;
   }
 }
@@ -74,7 +75,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
 
     res.json({ token, user: { id: user.id, phone: user.phone, name: user.name, role: user.role } });
   } catch (err) {
-    console.error('Login error:', err);
+    logError('POST /auth/login', err);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });

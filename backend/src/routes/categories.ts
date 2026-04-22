@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { Category } from '../types';
 import { rowToCategory } from '../mappers';
+import { logError } from '../logger';
 
 const router = Router();
 
@@ -12,7 +13,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     );
     res.json(rows.map(rowToCategory));
   } catch (err) {
-    console.error('GET /categories error:', err);
+    logError('GET /categories', err);
     res.status(500).json({ error: 'Failed to fetch categories' });
   }
 });
@@ -28,7 +29,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 
     res.status(201).json({ id, name, icon: icon ?? '', color: color ?? '', isDefault: Boolean(isDefault), order: order ?? 0 });
   } catch (err) {
-    console.error('POST /categories error:', err);
+    logError('POST /categories', err);
     res.status(500).json({ error: 'Failed to create category' });
   }
 });
@@ -50,7 +51,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
 
     res.json({ id, name, icon: icon ?? '', color: color ?? '', isDefault: Boolean(isDefault), order: order ?? 0 });
   } catch (err) {
-    console.error('PUT /categories/:id error:', err);
+    logError('PUT /categories/:id', err, { id: req.params.id });
     res.status(500).json({ error: 'Failed to update category' });
   }
 });
@@ -72,7 +73,7 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
     await req.db.query<ResultSetHeader>('DELETE FROM categories WHERE id = ?', [id]);
     res.status(204).send();
   } catch (err) {
-    console.error('DELETE /categories/:id error:', err);
+    logError('DELETE /categories/:id', err, { id: req.params.id });
     res.status(500).json({ error: 'Failed to delete category' });
   }
 });

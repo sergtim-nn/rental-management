@@ -1,12 +1,13 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import { ensureUploadsDir, generateId } from './utils';
 import { authMiddleware } from './middleware/auth';
 import { adminPool } from './db';
+import { logError } from './logger';
 import authRouter       from './routes/auth';
 import categoriesRouter from './routes/categories';
 import objectsRouter    from './routes/objects';
@@ -36,7 +37,7 @@ async function ensureAdminUser() {
     );
     console.log(`Admin user created in admin database: phone=${adminPhone}`);
   } catch (err) {
-    console.error('Failed to create admin user:', err);
+    logError('ensureAdminUser', err);
   }
 }
 
@@ -63,6 +64,15 @@ app.use('/api/settings',   authMiddleware, settingsRouter);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 app.use('/api/*', (_req, res) => res.status(404).json({ error: 'Not found' }));
+
+// Catch any error that bubbled past per-route handlers
+app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
+  logError('express unhandled', err, { path: req.path, method: req.method });
+  if (!res.headersSent) res.status(500).json({ error: 'Internal server error' });
+});
+
+process.on('unhandledRejection', (reason) => logError('unhandledRejection', reason));
+process.on('uncaughtException', (err) => logError('uncaughtException', err));
 
 const PORT = parseInt(process.env.PORT ?? '3002', 10);
 app.listen(PORT, () => console.log(`Rental API running on port ${PORT}`));

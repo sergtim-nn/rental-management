@@ -74,15 +74,18 @@ export function getPaymentSnapshotForPeriod(
   const historyRecords = obj.paymentHistory.filter((record) => record.period === period);
 
   if (historyRecords.length > 0) {
-    const latestRecord = [...historyRecords].sort((a, b) => b.date.localeCompare(a.date))[0];
+    // В одном периоде может быть несколько записей (аренда + счёт ЖКХ + оплата ЖКХ).
+    // plannedRent и plannedUtilities — «плановое значение» и дублируется между записями
+    // (счёт ЖКХ и оплата ЖКХ имеют одинаковый planned_utilities), поэтому берём максимум.
+    // actualRent/actualUtilities — фактическая оплата, может быть распределена по записям, суммируем.
     return {
       period,
       hasData: true,
       source: 'history',
       paymentCount: historyRecords.length,
-      plannedRent: latestRecord.plannedRent,
+      plannedRent: Math.max(0, ...historyRecords.map((r) => r.plannedRent)),
       actualRent: historyRecords.reduce((sum, record) => sum + record.actualRent, 0),
-      plannedUtilities: historyRecords.reduce((sum, r) => sum + (r.plannedUtilities ?? 0), 0),
+      plannedUtilities: Math.max(0, ...historyRecords.map((r) => r.plannedUtilities ?? 0)),
       actualUtilities: historyRecords.reduce((sum, record) => sum + record.actualUtilities, 0),
     };
   }
@@ -138,6 +141,36 @@ export function getPreviousPeriod(period: string): string {
   const [year, month] = period.split('-').map(Number);
   if (month === 1) return `${year - 1}-12`;
   return `${year}-${String(month - 1).padStart(2, '0')}`;
+}
+
+// Суммарный долг/переплата по закрытым периодам.
+// Аренда — за все периоды до текущего (текущий ещё не просрочен).
+// Коммуналка — за периоды до предыдущего (ЖКХ платится на месяц позже).
+export function calcHistoryBalance(obj: RealEstateObject, isParking: boolean): number {
+  const currentPeriod = getCurrentPeriod();
+  const rentCutoff = getPreviousPeriod(currentPeriod);
+  const utilCutoff = getPreviousPeriod(rentCutoff);
+
+  // Группируем по period, чтобы plannedRent/plannedUtilities для периода учитывались один раз
+  // (иначе счёт ЖКХ + оплата ЖКХ удвоили бы плановый счёт).
+  const byPeriod = new Map<string, { plannedRent: number; actualRent: number; plannedUtilities: number; actualUtilities: number }>();
+  for (const r of obj.paymentHistory) {
+    const cur = byPeriod.get(r.period) ?? { plannedRent: 0, actualRent: 0, plannedUtilities: 0, actualUtilities: 0 };
+    cur.plannedRent = Math.max(cur.plannedRent, r.plannedRent);
+    cur.actualRent += r.actualRent;
+    cur.plannedUtilities = Math.max(cur.plannedUtilities, r.plannedUtilities ?? 0);
+    cur.actualUtilities += r.actualUtilities;
+    byPeriod.set(r.period, cur);
+  }
+
+  let balance = 0;
+  for (const [period, s] of byPeriod) {
+    if (period <= rentCutoff) balance += s.actualRent - s.plannedRent;
+    if (!isParking && period <= utilCutoff && (s.plannedUtilities > 0 || s.actualUtilities > 0)) {
+      balance += s.actualUtilities - s.plannedUtilities;
+    }
+  }
+  return balance;
 }
 
 const MONTHS_RU_NOM = [

@@ -5,6 +5,7 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { AppState } from '../types';
 import { generateId, ensureUploadsDir } from '../utils';
 import { rowToCategory, rowToPaymentRecord, rowToDocument, rowToObject, groupByObjectId } from '../mappers';
+import { logError } from '../logger';
 
 const router = Router();
 
@@ -40,7 +41,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
     res.json(state);
   } catch (err) {
-    console.error('GET /state error:', err);
+    logError('GET /state', err);
     res.status(500).json({ error: 'Failed to fetch application state' });
   }
 });
@@ -154,7 +155,7 @@ router.post('/import', async (req: Request, res: Response): Promise<void> => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error('POST /state/import error:', err);
+    logError('POST /state/import', err);
     res.status(500).json({ error: 'Failed to import state' });
   }
 });

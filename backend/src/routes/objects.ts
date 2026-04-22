@@ -6,6 +6,7 @@ import multer from 'multer';
 import { RealEstateObject, PaymentRecord } from '../types';
 import { generateId, getUploadsDir } from '../utils';
 import { rowToPaymentRecord, rowToDocument, rowToObject, groupByObjectId } from '../mappers';
+import { logError } from '../logger';
 
 const router = Router();
 
@@ -47,7 +48,7 @@ router.put('/reorder', async (req: Request, res: Response): Promise<void> => {
     res.json({ success: true });
   } catch (err) {
     await conn.rollback();
-    console.error('PUT /objects/reorder error:', err);
+    logError('PUT /objects/reorder', err);
     res.status(500).json({ error: 'Failed to reorder objects' });
   } finally {
     conn.release();
@@ -74,7 +75,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       ),
     ));
   } catch (err) {
-    console.error('GET /objects error:', err);
+    logError('GET /objects', err);
     res.status(500).json({ error: 'Failed to fetch objects' });
   }
 });
@@ -127,7 +128,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       [], [],
     ));
   } catch (err) {
-    console.error('POST /objects error:', err);
+    logError('POST /objects', err);
     res.status(500).json({ error: 'Failed to create object' });
   }
 });
@@ -166,7 +167,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
 
     res.json(await fetchObjectWithRelations(req.db, id));
   } catch (err) {
-    console.error('PUT /objects/:id error:', err);
+    logError('PUT /objects/:id', err, { id: req.params.id });
     res.status(500).json({ error: 'Failed to update object' });
   }
 });
@@ -184,7 +185,7 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
     await req.db.query<ResultSetHeader>('DELETE FROM objects WHERE id = ?', [id]);
     res.status(204).send();
   } catch (err) {
-    console.error('DELETE /objects/:id error:', err);
+    logError('DELETE /objects/:id', err, { id: req.params.id });
     res.status(500).json({ error: 'Failed to delete object' });
   }
 });
@@ -202,7 +203,7 @@ async function setArchivedStatus(req: Request, res: Response, archived: boolean)
     }
     res.json(await fetchObjectWithRelations(req.db, id));
   } catch (err) {
-    console.error('setArchivedStatus error:', err);
+    logError('setArchivedStatus', err, { id: req.params.id, archived });
     res.status(500).json({ error: archived ? 'Failed to archive object' : 'Failed to restore object' });
   }
 }
@@ -256,7 +257,7 @@ router.post('/:id/payments', async (req: Request, res: Response): Promise<void> 
 
     res.status(201).json({ ...payment, id: pid });
   } catch (err) {
-    console.error('POST /objects/:id/payments error:', err);
+    logError('POST /objects/:id/payments', err, { id: req.params.id });
     res.status(500).json({ error: 'Failed to create payment record' });
   }
 });
@@ -293,7 +294,7 @@ router.put('/:id/payments/:pid', async (req: Request, res: Response): Promise<vo
 
     res.json({ ...payment, id: pid });
   } catch (err) {
-    console.error('PUT /objects/:id/payments/:pid error:', err);
+    logError('PUT /objects/:id/payments/:pid', err, { id: req.params.id, pid: req.params.pid });
     res.status(500).json({ error: 'Failed to update payment record' });
   }
 });
@@ -307,7 +308,7 @@ router.delete('/:id/payments/:pid', async (req: Request, res: Response): Promise
     );
     res.status(204).send();
   } catch (err) {
-    console.error('DELETE /objects/:id/payments/:pid error:', err);
+    logError('DELETE /objects/:id/payments/:pid', err, { id: req.params.id, pid: req.params.pid });
     res.status(500).json({ error: 'Failed to delete payment record' });
   }
 });
@@ -339,7 +340,7 @@ router.post('/:id/documents', upload.single('file'), async (req: Request, res: R
       uploadedAt: now,
     });
   } catch (err) {
-    console.error('POST /objects/:id/documents error:', err);
+    logError('POST /objects/:id/documents', err, { id: req.params.id });
     res.status(500).json({ error: 'Failed to upload document' });
   }
 });
@@ -363,7 +364,7 @@ router.get('/:id/documents/:did/download', async (req: Request, res: Response): 
       if (err) res.status(404).json({ error: 'File not found on disk' });
     });
   } catch (err) {
-    console.error('GET /objects/:id/documents/:did/download error:', err);
+    logError('GET /objects/:id/documents/:did/download', err, { id: req.params.id, did: req.params.did });
     res.status(500).json({ error: 'Failed to download document' });
   }
 });
@@ -385,7 +386,7 @@ router.delete('/:id/documents/:did', async (req: Request, res: Response): Promis
     await req.db.query<ResultSetHeader>('DELETE FROM documents WHERE id = ? AND object_id = ?', [did, id]);
     res.status(204).send();
   } catch (err) {
-    console.error('DELETE /objects/:id/documents/:did error:', err);
+    logError('DELETE /objects/:id/documents/:did', err, { id: req.params.id, did: req.params.did });
     res.status(500).json({ error: 'Failed to delete document' });
   }
 });
