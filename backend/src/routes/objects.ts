@@ -349,15 +349,17 @@ router.post('/:id/documents', upload.single('file'), async (req: Request, res: R
     const docId    = generateId();
     const now      = new Date().toISOString();
     const filePath = req.file.path;
+    // multer parses originalname as latin1; browsers send UTF-8 — decode back
+    const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
 
     await req.db.query<ResultSetHeader>(
       'INSERT INTO documents (id, object_id, name, size, mime_type, file_path, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [docId, id, req.file.originalname, req.file.size, req.file.mimetype, filePath, now],
+      [docId, id, originalName, req.file.size, req.file.mimetype, filePath, now],
     );
 
     res.status(201).json({
       id: docId,
-      name: req.file.originalname,
+      name: originalName,
       size: req.file.size,
       type: req.file.mimetype,
       url: `/api/objects/${id}/documents/${docId}/download`,
@@ -383,7 +385,10 @@ router.get('/:id/documents/:did/download', async (req: Request, res: Response): 
     }
 
     res.setHeader('Content-Type', rows[0].mime_type as string);
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(rows[0].name as string)}"`);
+    // RFC 5987: filename* для UTF-8 имён, filename="" как fallback для старых браузеров
+    const name = rows[0].name as string;
+    const asciiFallback = name.replace(/[^\x20-\x7E]/g, '_');
+    res.setHeader('Content-Disposition', `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(name)}`);
     res.sendFile(path.resolve(rows[0].file_path as string), (err) => {
       if (err) res.status(404).json({ error: 'File not found on disk' });
     });

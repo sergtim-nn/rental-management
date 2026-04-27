@@ -224,11 +224,6 @@ export default function ObjectModal({
     const year  = kind === 'rent' ? rentHistoryYear  : utilHistoryYear;
     const month = kind === 'rent' ? rentHistoryMonth : utilHistoryMonth;
     const period = `${year}-${String(month + 1).padStart(2, '0')}`;
-    const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    if (period > currentPeriod) {
-      window.alert('Нельзя сохранить платёж за будущий период');
-      return;
-    }
     const paymentDate = kind === 'rent' ? rentPaymentDate : utilitiesPaymentDate;
     if (paymentDate && paymentDate > today) {
       window.alert('Дата оплаты не может быть в будущем');
@@ -605,38 +600,11 @@ export default function ObjectModal({
                 onToggle={() => setShowDocs(!showDocs)}
               />
               {showDocs && (
-                <div className="pt-2 pb-3 space-y-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    className="hidden"
-                    onChange={handleFileUpload}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-[#d8d0e8] rounded-xl text-sm text-[#967BB6] hover:bg-[#f0ebf8] hover:border-[#967BB6] transition-colors"
-                  >
-                    <Upload size={16} />
-                    Прикрепить документы
-                  </button>
-                  {obj?.documents.map((doc) => (
-                    <div key={doc.id} className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-slate-200">
-                      <FileText size={16} className="text-blue-500 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-700 truncate">{doc.name}</p>
-                        <p className="text-xs text-slate-400">{(doc.size / 1024).toFixed(1)} KB · {formatDate(doc.uploadedAt)}</p>
-                      </div>
-                      <button onClick={() => handleDownload(doc)} className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-500">
-                        <Download size={14} />
-                      </button>
-                      <button onClick={() => onRemoveDocument(doc.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-red-400">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                <DocumentsSection
+                  documents={obj?.documents ?? []}
+                  onAdd={onAddDocument}
+                  onRemove={onRemoveDocument}
+                />
               )}
             </>
           )}
@@ -888,11 +856,6 @@ function DocumentCard({
 
   const handleSave = () => {
     const today = new Date().toISOString().split('T')[0];
-    const currentPeriod = today.slice(0, 7);
-    if (period > currentPeriod) {
-      window.alert('Период не может быть в будущем');
-      return;
-    }
     if (rentPaymentDate && rentPaymentDate > today) {
       window.alert('Дата оплаты аренды не может быть в будущем');
       return;
