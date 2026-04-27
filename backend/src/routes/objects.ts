@@ -43,7 +43,7 @@ router.put('/reorder', async (req: Request, res: Response): Promise<void> => {
     await conn.beginTransaction();
     for (let i = 0; i < ids.length; i++) {
       await conn.query<ResultSetHeader>(
-        'UPDATE objects SET sort_order = ?, version = version + 1 WHERE id = ?',
+        'UPDATE objects SET sort_order = ? WHERE id = ?',
         [i, ids[i]],
       );
     }
@@ -218,7 +218,7 @@ async function setArchivedStatus(req: Request, res: Response, archived: boolean)
   try {
     const { id } = req.params;
     const [result] = await req.db.query<ResultSetHeader>(
-      'UPDATE objects SET is_archived = ?, updated_at = ?, version = version + 1 WHERE id = ?',
+      'UPDATE objects SET is_archived = ?, updated_at = ? WHERE id = ?',
       [archived ? 1 : 0, new Date().toISOString(), id],
     );
     if (result.affectedRows === 0) {
@@ -267,7 +267,7 @@ router.post('/:id/payments', async (req: Request, res: Response): Promise<void> 
           cp_date = '', cp_actual_rent = 0, cp_rent_payment_date = '',
           cp_rent_payment_type = 'cash', cp_actual_utilities = 0,
           cp_utilities_payment_date = '', cp_utilities_payment_type = 'cash',
-          cp_note = NULL, updated_at = ?, version = version + 1
+          cp_note = NULL, updated_at = ?
          WHERE id = ?`,
         [now, id],
       );
