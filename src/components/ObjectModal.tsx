@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
-import { RealEstateObject, Category, Document, PaymentRecord } from '../types';
+import { useState } from 'react';
+import { RealEstateObject, Category, PaymentRecord } from '../types';
 import { formatCurrency, formatDate, formatPeriod } from '../utils/notifications';
 import { emptyCurrentPayment } from '../store/storage';
-import { api } from '../api/client';
+import DocumentsSection from './object-modal/DocumentsSection';
 import {
   X,
   Save,
@@ -11,9 +11,6 @@ import {
   Calendar,
   DollarSign,
   FileText,
-  Upload,
-  Trash2,
-  Download,
   ChevronDown,
   ChevronUp,
   History,
@@ -192,8 +189,6 @@ export default function ObjectModal({
   const [showDocs, setShowDocs] = useState(false);
   const [savedPaymentMessage, setSavedPaymentMessage] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const handleSave = () => {
     if (contractDate && contractDate > today) {
       window.alert('Дата заключения договора не может быть в будущем');
@@ -265,29 +260,6 @@ export default function ObjectModal({
       setUtilHistoryYear(prevMonthYear);
     }
     setTimeout(() => setSavedPaymentMessage(null), 3000);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    Array.from(files).forEach((file) => onAddDocument(file));
-    e.target.value = '';
-  };
-
-  const handleDownload = async (doc: Document) => {
-    const url = doc.url;
-    if (!url) return;
-    try {
-      const blob = await api.downloadDocument(url);
-      const objectUrl = URL.createObjectURL(blob);
-      const a = window.document.createElement('a');
-      a.href = objectUrl;
-      a.download = doc.name;
-      a.click();
-      URL.revokeObjectURL(objectUrl);
-    } catch (err) {
-      console.error('Download failed:', err);
-    }
   };
 
   const totalPlanned = plannedRent;
