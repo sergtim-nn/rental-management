@@ -222,7 +222,7 @@ export function useAppState() {
       console.error('Failed to update object:', err);
       setState((s) => ({ ...s, objects: s.objects.map((o) => (o.id === id ? obj : o)) }));
       if (err.status === 409) {
-        window.alert('Объект был изменён в другой вкладке или другим пользователем. Страница будет перезагружена.');
+        window.alert('Объект был изменён в другой вкладке. Страница будет перезагружена.');
         window.location.reload();
       }
       return null;
