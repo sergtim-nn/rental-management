@@ -58,13 +58,13 @@ function getPaymentStatus(planned: number, actual: number): {
   icon: React.ReactNode;
 } {
   if (planned === 0 && actual === 0)
-    return { label: 'Нет данных', color: 'text-slate-500 bg-slate-100', icon: <Clock size={11} /> };
+    return { label: 'Нет данных', color: 'text-slate-500 bg-slate-100', icon: <Clock size={14} /> };
   if (actual === 0 && planned > 0)
-    return { label: 'Не оплачено', color: 'text-[#f4724e] bg-[#fdf0ec]', icon: <AlertCircle size={11} /> };
+    return { label: 'Не оплачено', color: 'text-[#f4724e] bg-[#fdf0ec]', icon: <AlertCircle size={14} /> };
   if (actual >= planned && planned > 0)
-    return { label: 'Оплачено', color: 'text-[#2ec4a9] bg-[#e6f9f6]', icon: <CheckCircle2 size={11} /> };
+    return { label: 'Оплачено', color: 'text-[#2ec4a9] bg-[#e6f9f6]', icon: <CheckCircle2 size={14} /> };
   if (actual > 0 && actual < planned)
-    return { label: 'Частично', color: 'text-amber-600 bg-amber-50', icon: <Clock size={11} /> };
+    return { label: 'Частично', color: 'text-amber-600 bg-amber-50', icon: <Clock size={14} /> };
   return { label: '—', color: 'text-slate-400 bg-slate-50', icon: null };
 }
 
@@ -121,9 +121,13 @@ export default function ObjectCard({
                 <FileText size={11} />
               </span>
             )}
-            <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${overallStatus.color}`}>
+            <span
+              className={`inline-flex items-center gap-0.5 font-semibold rounded-full ${overallStatus.color} p-1 sm:px-1.5 sm:py-0.5 sm:text-[10px]`}
+              title={overallStatus.label}
+              aria-label={overallStatus.label}
+            >
               {overallStatus.icon}
-              {overallStatus.label}
+              <span className="hidden sm:inline">{overallStatus.label}</span>
             </span>
           </div>
         </div>
