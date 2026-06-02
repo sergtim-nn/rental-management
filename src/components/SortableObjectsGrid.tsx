@@ -19,9 +19,11 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import ObjectCard from './ObjectCard';
+import LeadCard from './LeadCard';
 import { api } from '../api/client';
 import { RealEstateObject, Category } from '../types';
 import { PeriodSelection } from '../utils/payments';
+import { isLeadCategory } from '../utils/leads';
 
 interface Props {
   objects: RealEstateObject[];
@@ -70,17 +72,30 @@ function SortableCard({
     touchAction: 'manipulation',
   };
 
+  const isLead = isLeadCategory(obj.categoryId);
+
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <ObjectCard
-        obj={obj}
-        category={category}
-        periodSelection={periodSelection}
-        onClick={() => onOpenObject(obj.id)}
-        onArchive={() => onArchiveObject(obj.id)}
-        onRestore={() => onRestoreObject(obj.id)}
-        onDelete={() => onDeleteObject(obj.id)}
-      />
+      {isLead ? (
+        <LeadCard
+          obj={obj}
+          category={category}
+          onClick={() => onOpenObject(obj.id)}
+          onArchive={() => onArchiveObject(obj.id)}
+          onRestore={() => onRestoreObject(obj.id)}
+          onDelete={() => onDeleteObject(obj.id)}
+        />
+      ) : (
+        <ObjectCard
+          obj={obj}
+          category={category}
+          periodSelection={periodSelection}
+          onClick={() => onOpenObject(obj.id)}
+          onArchive={() => onArchiveObject(obj.id)}
+          onRestore={() => onRestoreObject(obj.id)}
+          onDelete={() => onDeleteObject(obj.id)}
+        />
+      )}
     </div>
   );
 }
@@ -166,15 +181,18 @@ export default function SortableObjectsGrid({
             />
           ))}
 
-          {onNewObject && (
-            <button
-              onClick={onNewObject}
-              className="border-2 border-dashed border-[#d8d0e8] rounded-2xl p-4 flex flex-col items-center justify-center gap-2 text-[#967BB6] hover:border-[#967BB6] hover:bg-[#f0ebf8] transition-all min-h-[160px]"
-            >
-              <Plus size={22} />
-              <span className="text-xs font-medium">Добавить объект</span>
-            </button>
-          )}
+          {onNewObject && (() => {
+            const leadMode = sortedObjects.some((o) => isLeadCategory(o.categoryId));
+            return (
+              <button
+                onClick={onNewObject}
+                className="border-2 border-dashed border-[#d8d0e8] rounded-2xl p-4 flex flex-col items-center justify-center gap-2 text-[#967BB6] hover:border-[#967BB6] hover:bg-[#f0ebf8] transition-all min-h-[160px]"
+              >
+                <Plus size={22} />
+                <span className="text-xs font-medium">{leadMode ? 'Добавить лид' : 'Добавить объект'}</span>
+              </button>
+            );
+          })()}
         </div>
       </SortableContext>
 
@@ -186,15 +204,26 @@ export default function SortableObjectsGrid({
             borderRadius: '1rem',
             transform: 'rotate(1.5deg)',
           }}>
-            <ObjectCard
-              obj={activeObj}
-              category={activeCategory}
-              periodSelection={periodSelection}
-              onClick={() => {}}
-              onArchive={() => {}}
-              onRestore={() => {}}
-              onDelete={() => {}}
-            />
+            {isLeadCategory(activeObj.categoryId) ? (
+              <LeadCard
+                obj={activeObj}
+                category={activeCategory}
+                onClick={() => {}}
+                onArchive={() => {}}
+                onRestore={() => {}}
+                onDelete={() => {}}
+              />
+            ) : (
+              <ObjectCard
+                obj={activeObj}
+                category={activeCategory}
+                periodSelection={periodSelection}
+                onClick={() => {}}
+                onArchive={() => {}}
+                onRestore={() => {}}
+                onDelete={() => {}}
+              />
+            )}
           </div>
         ) : null}
       </DragOverlay>

@@ -37,6 +37,14 @@ export interface CurrentPayment {
   note?: string;
 }
 
+export type LeadStatus = '' | 'not_answered' | 'not_relevant' | 'thinking' | 'ready' | 'booked';
+
+export interface LeadQuestion {
+  id: string;
+  text: string;
+  resolved: boolean;
+}
+
 export interface RealEstateObject {
   id: string;
   categoryId: string;
@@ -54,6 +62,14 @@ export interface RealEstateObject {
   version: number;
   createdAt: string;
   updatedAt: string;
+  // CRM-поля (используются только для категории phone_booth)
+  leadFullName?: string;
+  leadMaxPhone?: string;
+  leadEmail?: string;
+  leadComment?: string;
+  leadStatus?: LeadStatus;
+  leadAction?: string;
+  leadQuestions?: LeadQuestion[];
 }
 
 export interface Category {

@@ -35,6 +35,14 @@ export const DEFAULT_CATEGORIES: Category[] = [
     isDefault: true,
     order: 3,
   },
+  {
+    id: 'phone_booth',
+    name: 'Телефонная будка',
+    icon: '☎️',
+    color: 'orange',
+    isDefault: true,
+    order: 4,
+  },
 ];
 
 export const DEFAULT_STATE: AppState = {

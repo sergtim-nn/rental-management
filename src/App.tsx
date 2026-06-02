@@ -7,10 +7,12 @@ import { normalizePeriodSelection, type PeriodSelection } from './utils/payments
 import Sidebar from './components/Sidebar';
 import SortableObjectsGrid from './components/SortableObjectsGrid';
 import ObjectModal from './components/ObjectModal';
+import LeadModal from './components/LeadModal';
 import Dashboard from './components/Dashboard';
 import SettingsView from './components/SettingsView';
 import LoginScreen from './components/LoginScreen';
 import MobileCategoriesScreen from './components/MobileCategoriesScreen';
+import { isLeadCategory } from './utils/leads';
 import { Plus, Search, X, ChevronLeft, BarChart2, Home, Archive, Settings } from 'lucide-react';
 
 type ActiveView = 'dashboard' | 'categories' | 'category' | 'archive' | 'settings';
@@ -457,11 +459,15 @@ export default function App() {
               {categoryObjects.length === 0 ? (
                 <EmptyState
                   icon={activeCategory?.icon ?? '📦'}
-                  title={searchQuery ? 'Ничего не найдено' : 'Нет объектов'}
+                  title={searchQuery
+                    ? 'Ничего не найдено'
+                    : (isLeadCategory(state.activeCategoryId) ? 'Нет лидов' : 'Нет объектов')}
                   subtitle={
                     searchQuery
                       ? 'Попробуйте изменить запрос'
-                      : `Добавьте первый объект в категорию "${activeCategory?.name}"`
+                      : (isLeadCategory(state.activeCategoryId)
+                          ? `Добавьте первого лида в "${activeCategory?.name}"`
+                          : `Добавьте первый объект в категорию "${activeCategory?.name}"`)
                   }
                   action={
                     !searchQuery ? (
@@ -470,7 +476,7 @@ export default function App() {
                         className="flex items-center gap-2 px-5 py-2.5 bg-[#967BB6] text-white text-sm font-semibold rounded-full hover:bg-[#6d548c] transition-colors shadow-sm shadow-[#967BB6]/30"
                       >
                         <Plus size={16} />
-                        Добавить объект
+                        {isLeadCategory(state.activeCategoryId) ? 'Добавить лид' : 'Добавить объект'}
                       </button>
                     ) : undefined
                   }
@@ -556,22 +562,38 @@ export default function App() {
         </nav>
       </main>
 
-      {/* Object Modal */}
-      {(isModalNew || modalObjectId !== null) && (
-        <ObjectModal
-          obj={modalObject}
-          categories={state.categories}
-          isNew={isModalNew}
-          defaultCategoryId={state.activeCategoryId ?? state.categories[0]?.id ?? ''}
-          onSave={handleModalSave}
-          onClose={handleModalClose}
-          onAddDocument={handleAddDocument}
-          onRemoveDocument={handleRemoveDocument}
-          onSaveToHistory={handleSaveToHistory}
-          onUpdateHistoryRecord={updatePaymentRecord}
-          onDeleteHistoryRecord={deletePaymentRecord}
-        />
-      )}
+      {/* Object / Lead Modal */}
+      {(isModalNew || modalObjectId !== null) && (() => {
+        const defaultCat = state.activeCategoryId ?? state.categories[0]?.id ?? '';
+        const isLead = isModalNew
+          ? isLeadCategory(defaultCat)
+          : isLeadCategory(modalObject?.categoryId);
+        if (isLead) {
+          return (
+            <LeadModal
+              obj={modalObject}
+              isNew={isModalNew}
+              onSave={handleModalSave}
+              onClose={handleModalClose}
+            />
+          );
+        }
+        return (
+          <ObjectModal
+            obj={modalObject}
+            categories={state.categories}
+            isNew={isModalNew}
+            defaultCategoryId={defaultCat}
+            onSave={handleModalSave}
+            onClose={handleModalClose}
+            onAddDocument={handleAddDocument}
+            onRemoveDocument={handleRemoveDocument}
+            onSaveToHistory={handleSaveToHistory}
+            onUpdateHistoryRecord={updatePaymentRecord}
+            onDeleteHistoryRecord={deletePaymentRecord}
+          />
+        );
+      })()}
     </div>
   );
 }

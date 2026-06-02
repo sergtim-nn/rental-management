@@ -34,7 +34,7 @@ interface ObjectCardProps {
 }
 
 // Aura Ledger palette per category color
-const CATEGORY_COLORS: Record<string, { bg: string; text: string; dot: string; strip: string }> = {
+export const CATEGORY_COLORS: Record<string, { bg: string; text: string; dot: string; strip: string }> = {
   blue:   { bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-500',   strip: 'bg-blue-500' },
   green:  { bg: 'bg-green-50',  text: 'text-green-700',  dot: 'bg-green-500',  strip: 'bg-green-500' },
   purple: { bg: 'bg-purple-50', text: 'text-purple-700', dot: 'bg-[#967BB6]',  strip: 'bg-[#967BB6]' },

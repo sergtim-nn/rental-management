@@ -1,5 +1,22 @@
 import { RowDataPacket } from 'mysql2/promise';
-import { Category, RealEstateObject, PaymentRecord, Document, PaymentType } from './types';
+import { Category, RealEstateObject, PaymentRecord, Document, PaymentType, LeadStatus, LeadQuestion } from './types';
+
+function parseLeadQuestions(raw: unknown): LeadQuestion[] | undefined {
+  if (raw === null || raw === undefined || raw === '') return undefined;
+  try {
+    const arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (!Array.isArray(arr)) return undefined;
+    return arr
+      .filter((q) => q && typeof q === 'object')
+      .map((q: { id?: unknown; text?: unknown; resolved?: unknown }) => ({
+        id:       String(q.id ?? ''),
+        text:     String(q.text ?? ''),
+        resolved: Boolean(q.resolved),
+      }));
+  } catch {
+    return undefined;
+  }
+}
 
 export function rowToCategory(row: RowDataPacket): Category {
   return {
@@ -72,6 +89,13 @@ export function rowToObject(
     version:        Number(row.version ?? 0),
     createdAt:      row.created_at as string,
     updatedAt:      row.updated_at as string,
+    leadFullName:   (row.lead_full_name  as string | null) ?? undefined,
+    leadMaxPhone:   (row.lead_max_phone  as string | null) ?? undefined,
+    leadEmail:      (row.lead_email      as string | null) ?? undefined,
+    leadComment:    (row.lead_comment    as string | null) ?? undefined,
+    leadStatus:     ((row.lead_status    as string | null) ?? undefined) as LeadStatus | undefined,
+    leadAction:     (row.lead_action     as string | null) ?? undefined,
+    leadQuestions:  parseLeadQuestions(row.lead_questions),
   };
 }
 

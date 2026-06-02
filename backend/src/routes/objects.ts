@@ -102,8 +102,9 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
          contract_date, planned_rent, planned_utilities,
          cp_date, cp_actual_rent, cp_rent_payment_date, cp_rent_payment_type,
          cp_actual_utilities, cp_utilities_payment_date, cp_utilities_payment_type, cp_note,
-         is_archived, sort_order, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         is_archived, sort_order, created_at, updated_at,
+         lead_full_name, lead_max_phone, lead_email, lead_comment, lead_status, lead_action, lead_questions)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         obj.id, obj.categoryId, obj.street, obj.building,
         obj.tenantName, obj.tenantPhone, obj.tenantTelegram, obj.contractDate,
@@ -111,6 +112,9 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
         cp.date ?? '', cp.actualRent ?? 0, cp.rentPaymentDate ?? '', cp.rentPaymentType ?? 'cash',
         cp.actualUtilities ?? 0, cp.utilitiesPaymentDate ?? '', cp.utilitiesPaymentType ?? 'cash',
         cp.note ?? null, obj.isArchived ? 1 : 0, sortOrder, obj.createdAt, obj.updatedAt,
+        obj.leadFullName ?? null, obj.leadMaxPhone ?? null, obj.leadEmail ?? null,
+        obj.leadComment ?? null, obj.leadStatus ?? null, obj.leadAction ?? null,
+        obj.leadQuestions ? JSON.stringify(obj.leadQuestions) : null,
       ],
     );
 
@@ -127,6 +131,13 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
         cp_actual_utilities: cp.actualUtilities,
         cp_utilities_payment_date: cp.utilitiesPaymentDate,
         cp_utilities_payment_type: cp.utilitiesPaymentType, cp_note: cp.note,
+        lead_full_name: obj.leadFullName ?? null,
+        lead_max_phone: obj.leadMaxPhone ?? null,
+        lead_email:     obj.leadEmail ?? null,
+        lead_comment:   obj.leadComment ?? null,
+        lead_status:    obj.leadStatus ?? null,
+        lead_action:    obj.leadAction ?? null,
+        lead_questions: obj.leadQuestions ? JSON.stringify(obj.leadQuestions) : null,
       } as unknown as RowDataPacket,
       [], [],
     ));
@@ -158,7 +169,10 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
         contract_date = ?, planned_rent = ?, planned_utilities = ?,
         cp_date = ?, cp_actual_rent = ?, cp_rent_payment_date = ?, cp_rent_payment_type = ?,
         cp_actual_utilities = ?, cp_utilities_payment_date = ?, cp_utilities_payment_type = ?,
-        cp_note = ?, is_archived = ?, updated_at = ?, version = version + 1
+        cp_note = ?, is_archived = ?, updated_at = ?,
+        lead_full_name = ?, lead_max_phone = ?, lead_email = ?,
+        lead_comment = ?, lead_status = ?, lead_action = ?, lead_questions = ?,
+        version = version + 1
        ${whereClause}`,
       [
         obj.categoryId, obj.street, obj.building,
@@ -167,6 +181,9 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
         cp.date ?? '', cp.actualRent ?? 0, cp.rentPaymentDate ?? '', cp.rentPaymentType ?? 'cash',
         cp.actualUtilities ?? 0, cp.utilitiesPaymentDate ?? '', cp.utilitiesPaymentType ?? 'cash',
         cp.note ?? null, obj.isArchived ? 1 : 0, obj.updatedAt,
+        obj.leadFullName ?? null, obj.leadMaxPhone ?? null, obj.leadEmail ?? null,
+        obj.leadComment ?? null, obj.leadStatus ?? null, obj.leadAction ?? null,
+        obj.leadQuestions ? JSON.stringify(obj.leadQuestions) : null,
         ...whereParams,
       ],
     );

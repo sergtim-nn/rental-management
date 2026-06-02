@@ -45,6 +45,13 @@ CREATE TABLE IF NOT EXISTS objects (
   version                   INT                 NOT NULL DEFAULT 0,
   created_at                VARCHAR(64)         NOT NULL DEFAULT '',
   updated_at                VARCHAR(64)         NOT NULL DEFAULT '',
+  lead_full_name            VARCHAR(255)        NULL,
+  lead_max_phone            VARCHAR(64)         NULL,
+  lead_email                VARCHAR(255)        NULL,
+  lead_comment              TEXT                NULL,
+  lead_status               VARCHAR(32)         NULL,
+  lead_action               TEXT                NULL,
+  lead_questions            TEXT                NULL,
   PRIMARY KEY (id),
   CONSTRAINT fk_admin_objects_category
     FOREIGN KEY (category_id) REFERENCES categories (id)
@@ -148,6 +155,13 @@ CREATE TABLE IF NOT EXISTS objects (
   version                   INT                 NOT NULL DEFAULT 0,
   created_at                VARCHAR(64)         NOT NULL DEFAULT '',
   updated_at                VARCHAR(64)         NOT NULL DEFAULT '',
+  lead_full_name            VARCHAR(255)        NULL,
+  lead_max_phone            VARCHAR(64)         NULL,
+  lead_email                VARCHAR(255)        NULL,
+  lead_comment              TEXT                NULL,
+  lead_status               VARCHAR(32)         NULL,
+  lead_action               TEXT                NULL,
+  lead_questions            TEXT                NULL,
   PRIMARY KEY (id),
   CONSTRAINT fk_objects_category
     FOREIGN KEY (category_id) REFERENCES categories (id)

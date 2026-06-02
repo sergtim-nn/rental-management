@@ -4,10 +4,11 @@ import { generateId, emptyCurrentPayment } from '../store/storage';
 import { api, getToken, setToken, removeToken } from '../api/client';
 
 export const DEFAULT_CATEGORIES = [
-  { id: 'parking',    name: 'Парковка',     icon: '🅿️', color: 'blue',   isDefault: true, order: 0 },
-  { id: 'apartments', name: 'Квартиры',     icon: '🏠', color: 'green',  isDefault: true, order: 1 },
-  { id: 'commercial', name: 'Коммерческая', icon: '🏢', color: 'purple', isDefault: true, order: 2 },
-  { id: 'other',      name: 'Другое',       icon: '📦', color: 'orange', isDefault: true, order: 3 },
+  { id: 'parking',     name: 'Парковка',         icon: '🅿️', color: 'blue',   isDefault: true, order: 0 },
+  { id: 'apartments',  name: 'Квартиры',         icon: '🏠', color: 'green',  isDefault: true, order: 1 },
+  { id: 'commercial',  name: 'Коммерческая',     icon: '🏢', color: 'purple', isDefault: true, order: 2 },
+  { id: 'other',       name: 'Другое',           icon: '📦', color: 'orange', isDefault: true, order: 3 },
+  { id: 'phone_booth', name: 'Телефонная будка', icon: '☎️', color: 'orange', isDefault: true, order: 4 },
 ];
 
 const EMPTY_STATE: AppState = {
